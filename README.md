@@ -17,6 +17,8 @@ This is still under development. Read more [here](https://github.com/limina1/ind
 
 ```
 
+Some example types may be recipe, vocabulary, flashcard, notebook (like Jupyter notebooks) with accompanying Svelte components.
+
 ## Developing
 
 Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
