@@ -7,7 +7,15 @@ This is still under development. Read more [here](https://github.com/limina1/ind
 ### Roadmap
 
 - Optimization (current iteration does keep articles stored when going to previous page)
-- Supporting different article types. Accepting pull requests. Within the tags of kind 30041 have a ["type", <type>] where <type> is the article for display. Some examples - Recipes, notebook, flashcard, vocabulary etc.
+- Supporting different article types. Accepting pull requests. Within the tags of kind 30041 have a type tag:
+
+```json
+
+{
+"tags": ["type", <named article type>]
+}
+
+```
 
 ## Developing
 
