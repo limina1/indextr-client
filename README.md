@@ -4,6 +4,11 @@ indextr is a Nostr-native wiki client built for Distributed Collective Knowledge
 
 This is still under development. Read more [here](https://github.com/limina1/indextr-principles/tree/main).
 
+### Roadmap
+
+- Optimization (current iteration does keep articles stored when going to previous page)
+- Supporting different article types. Accepting pull requests. Within the tags of kind 30041 have a ["type", <type>] where <type> is the article for display. Some examples - Recipes, notebook, flashcard, vocabulary etc.
+
 ## Developing
 
 Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
