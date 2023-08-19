@@ -11,9 +11,9 @@ This is still under development. Read more [here](https://github.com/limina1/ind
 
 ```json
 
-{
+{[
 "tags": ["type", <named article type>]
-}
+]}
 
 ```
 
