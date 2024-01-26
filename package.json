@@ -17,6 +17,8 @@
     "@types/markdown-it": "^13.0.7",
     "autoprefixer": "^10.4.17",
     "eslint-plugin-svelte": "^2.35.1",
+    "flowbite": "^2.2.1",
+    "flowbite-svelte": "^0.44.22",
     "postcss": "^8.4.33",
     "postcss-load-config": "^5.0.2",
     "prettier": "^3.2.4",
@@ -32,6 +34,7 @@
   "dependencies": {
     "@nostr-dev-kit/ndk": "^2.3.3",
     "@nostr-dev-kit/ndk-cache-dexie": "^2.2.4",
+    "@popperjs/core": "^2.11.8",
     "@sveltejs/vite-plugin-svelte": "^3.0.1",
     "@tailwindcss/forms": "^0.5.7",
     "@tailwindcss/typography": "^0.5.10",
@@ -39,6 +42,8 @@
     "markdown-it-plain-text": "^0.3.0",
     "marked": "^11.1.1",
     "nostr-tools": "^2.1.4",
-    "showdown": "^2.1.0"
+    "showdown": "^2.1.0",
+    "svelte-add": "2023.12.16-0.0",
+    "tailwind-merge": "^2.2.1"
   }
 }

@@ -2,6 +2,7 @@
  	import {nip19} from 'nostr-tools';
  	import {ndk} from '$lib/ndk';
  	import {idList} from '$lib/stores';
+    import DefaultButton from '$lib/defaultShareButton.svelte';
 
  	export let event: NDKEvent;
  	const title: string = JSON.parse(event.content).title;
@@ -21,6 +22,7 @@
 	<div class="ArticleHeader" on:click={handleSendEvents}>
 		<h2>{title}</h2>
 	</div>
+
 </a>
 
 <style>
@@ -37,4 +39,5 @@
 	.ArticleHeader h2 {
 		font-size: 1.5rem;
 	}
+/* position button top right corner */
 </style>
