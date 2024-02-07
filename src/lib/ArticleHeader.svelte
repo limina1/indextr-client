@@ -1,13 +1,14 @@
 <script lang="ts">
   import { ndk } from "$lib/ndk";
-  import { nip19 } from "nostr-tools";
+  // import { nip19 } from "nostr-tools";
+  import { neventEncode } from "$lib/utils";
   import type { NDKEvent } from "@nostr-dev-kit/ndk";
   import { idList } from "$lib/stores";
   import DefaultButton from "$lib/defaultShareButton.svelte";
 
   export let event: NDKEvent;
   const title: string = JSON.parse(event.content).title;
-  const href: string = nip19.noteEncode(event.id);
+  const href: string = neventEncode(event);
   // console.log(event);
   // con
   // console.log(nip19.neventEncode(event));
