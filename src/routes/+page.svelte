@@ -13,10 +13,12 @@
   const eventlist = loadEvents();
 </script>
 
-{#await eventlist}
-  <p>Loading...</p>
-{:then events}
-  {#each Array.from(events) as event, i}
-    <ArticleHeader {event} />
-  {/each}
-{/await}
+<div class='leather flex flex-col flex-grow-0 space-y-4 overflow-y-auto w-max'>
+  {#await eventlist}
+    <p>Loading...</p>
+  {:then events}
+    {#each Array.from(events) as event, i}
+      <ArticleHeader {event} />
+    {/each}
+  {/await}
+</div>

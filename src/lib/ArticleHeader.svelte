@@ -1,17 +1,15 @@
 <script lang="ts">
-  import { ndk } from "$lib/ndk";
-  // import { nip19 } from "nostr-tools";
   import { neventEncode } from "$lib/utils";
   import type { NDKEvent } from "@nostr-dev-kit/ndk";
+  import { standardRelays } from "./consts";
   import { idList } from "$lib/stores";
-  import DefaultButton from "$lib/defaultShareButton.svelte";
+  import { Card, Button, Modal, Tooltip } from "flowbite-svelte";
+  import { ClipboardCheckOutline, ClipboardCleanOutline, CodeOutline, ShareNodesOutline } from "flowbite-svelte-icons";
+  import type { SvelteComponent } from "svelte";
 
   export let event: NDKEvent;
   const title: string = JSON.parse(event.content).title;
   const href: string = neventEncode(event);
-  // console.log(event);
-  // con
-  // console.log(nip19.neventEncode(event));
 
   const handleSendEvents = () => {
     $idList = [];
@@ -21,38 +19,65 @@
       $idList = [...$idList, id];
     }
   };
+
+  let eventIdCopied: boolean = false;
+  function copyEventId() {
+    console.debug("copyEventID");
+    const relays: string[] = standardRelays;
+    const naddr = neventEncode(event, relays);
+
+    navigator.clipboard.writeText(naddr);
+
+    eventIdCopied = true;
+  }
+
+  let jsonModalOpen: boolean = false;
+  function viewJson() {
+    console.debug("viewJSON");
+    const relays: string[] = standardRelays;
+    const naddr = neventEncode(event, relays);
+    jsonModalOpen = true;
+  }
+
+  let shareLinkCopied: boolean = false;
+  function shareNjump() {
+    const relays: string[] = standardRelays;
+    const naddr = neventEncode(event, relays);
+
+    console.debug(naddr);
+    navigator.clipboard.writeText(`njump.me/${naddr}`);
+
+    shareLinkCopied = true;
+  }
 </script>
 
-<div class="ArticleBox">
-  <a href="/{href}">
-    <div class="ArticleHeader" on:click={handleSendEvents}>
-      <p class="title">{title}</p>
+<Card class='ArticleBox card-leather w-80'>
+  <div class='flex flex-col space-y-4'>
+    <a href="/{href}" on:click={handleSendEvents}>
+      <h2>{title}</h2>
+    </a>
+    <div class='w-full flex space-x-2 justify-end'>
+      <Button class='btn-leather' size='xs' on:click={shareNjump}><ShareNodesOutline /></Button>
+      <Tooltip class='tooltip-leather' type='auto' placement='top' on:show={() => shareLinkCopied = false}>
+        {#if shareLinkCopied}
+          <ClipboardCheckOutline />
+        {:else}
+          Share via NJump
+        {/if}
+      </Tooltip>
+      <Button class='btn-leather' size='xs' outline on:click={copyEventId}><ClipboardCleanOutline /></Button>
+      <Tooltip class='tooltip-leather' type='auto' placement='top' on:show={() => eventIdCopied = false}>
+        {#if eventIdCopied}
+          <ClipboardCheckOutline />
+        {:else}
+          Copy event ID
+        {/if}
+      </Tooltip>
+      <Button class='btn-leather' size='xs' outline on:click={viewJson}><CodeOutline /></Button>
+      <Tooltip class='tooltip-leather' type='auto' placement='top'>View JSON</Tooltip>
     </div>
-  </a>
-  <DefaultButton {event} />
-</div>
-<br />
-
-<style>
-  .ArticleBox {
-    /* position: relative; */
-    display: grid;
-    grid-template-columns: 3fr 1fr;
-    border: 1px solid purple;
-    border-radius: 10px;
-    border-top-width: 5px;
-    /* max-width: 100%; */
-  }
-  .ArticleHeader {
-    border-radius: 10px;
-    border-top-width: 5px;
-    text-align: center;
-    padding: 30px;
-    border: 1px solid purple;
-  }
-  .title {
-    color: white;
-    font-size: 1.5em;
-    font-weight: bold;
-  }
-</style>
+  </div>
+  <Modal class='modal-leather' title='Event JSON' bind:open={jsonModalOpen} autoclose outsideclose size='sm'>
+    <code>{JSON.stringify(event.rawEvent())}</code>
+  </Modal>
+</Card>

@@ -1,38 +1,24 @@
 <script lang="ts">
+  import { DarkMode, Navbar, NavLi, NavUl, NavHamburger, NavBrand } from 'flowbite-svelte';
+  import { HomeSolid } from 'flowbite-svelte-icons';
+
+  let className: string;
+  export { className as class };
 </script>
 
-<div class="NavBar">
-  <a href="./about"> About</a>
-  <a href="./create"> New Note</a>
-  <a href="./visualize"> Visualize</a>
-  <a href="./login" class="login"> Login</a>
-</div>
-
-<style>
-  .login {
-    float: right;
-  }
-  .NavBar {
-    overflow: hidden;
-    background-color: #333;
-  }
-
-  .NavBar a {
-    float: left;
-    display: block;
-    color: #f2f2f2;
-    text-align: center;
-    padding: 14px 16px;
-    text-decoration: none;
-  }
-
-  .NavBar a:hover {
-    background-color: #ddd;
-    color: black;
-  }
-
-  .NavBar a.active {
-    background-color: #4caf50;
-    color: white;
-  }
-</style>
+<Navbar class={`Navbar navbar-leather ${className}`}>
+  <div class='flex flex-grow justify-between'>
+    <NavBrand href='./'>
+      <h1 class='font-serif'>Alexandria</h1>
+    </NavBrand>
+    <!-- TODO: Restyle the dark mode icon. -->
+    <DarkMode btnClass='btn-leather p-4'/>
+  </div>
+  <NavHamburger class='btn-leather' />
+  <NavUl class='ul-leather'>
+    <NavLi href='./about'>About</NavLi>
+    <NavLi href='./create'>New Note</NavLi>
+    <NavLi href='./visualize'>Visualize</NavLi>
+    <NavLi href='./login'>Login</NavLi>
+  </NavUl>
+</Navbar>

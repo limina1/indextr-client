@@ -1,3 +1,95 @@
-body {
-  padding-top: 50px;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  /* General */
+  .leather {
+    @apply bg-primary-1000 dark:bg-primary-0;
+  }
+
+  /* Button */
+  button.btn-leather.text-white {
+    @apply text-primary-1000;
+  }
+
+  .btn-leather span svg {
+    @apply fill-gray-700 hover:fill-primary-400 dark:fill-gray-400 dark:hover:fill-primary-700;
+  }
+
+  .btn-leather.text-xs {
+    @apply w-7 h-7;
+  }
+
+  .btn-leather.text-xs svg {
+    @apply w-3 h-3;
+  }
+
+  .btn-leather.text-sm {
+    @apply w-8 h-8;
+  }
+
+  .btn-leather.text-sm svg {
+    @apply w-4 h-4;
+  }
+
+  /* Card */
+  div.card-leather {
+    @apply bg-primary-1000 dark:bg-primary-0 border-gray-200 has-[:hover]:border-primary-400 dark:border-gray-700 dark:has-[:hover]:border-primary-700;
+  }
+
+  div.card-leather h1,
+  div.card-leather h2,
+  div.card-leather h3,
+  div.card-leather h4,
+  div.card-leather h5,
+  div.card-leather h6 {
+  @apply text-gray-700 hover:text-primary-400 dark:text-gray-400 dark:hover:text-primary-700;
+  }
+
+  /* Modal */
+  div.modal-leather > div {
+    @apply bg-primary-1000 dark:bg-primary-0 border-b-[1px] border-gray-700 dark:border-gray-400;
+  }
+
+  div.modal-leather > div > h1, 
+  div.modal-leather > div > h2, 
+  div.modal-leather > div > h3, 
+  div.modal-leather > div > h4, 
+  div.modal-leather > div > h5, 
+  div.modal-leather > div > h6 {
+    @apply text-gray-700 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-400;
+  }
+
+  div.modal-leather button {
+    @apply bg-primary-1000 hover:bg-primary-1000 dark:bg-primary-0 dark:hover:bg-primary-0 text-gray-700 hover:text-primary-400 dark:text-gray-400 dark:hover:text-primary-700;
+  }
+
+  /* Navbar */
+  nav.navbar-leather {
+    @apply bg-primary-1000 dark:bg-primary-0;
+  }
+
+  nav.navbar-leather svg {
+    @apply fill-gray-700 hover:fill-primary-400 dark:fill-gray-400 dark:hover:fill-primary-700;
+  }
+
+  nav.navbar-leather h1,
+  nav.navbar-leather h2,
+  nav.navbar-leather h3,
+  nav.navbar-leather h4,
+  nav.navbar-leather h5,
+  nav.navbar-leather h6 {
+    @apply text-gray-700 hover:text-primary-400 dark:text-gray-400 dark:hover:text-primary-700;
+  }
+
+  /* Tooltip */
+  div.tooltip-leather {
+    @apply text-gray-700 dark:text-gray-400;
+  }
+
+  /* Unordered list */
+  .ul-leather li a {
+    @apply text-gray-700 hover:text-primary-400 dark:text-gray-400 dark:hover:text-primary-700;
+  }
 }
