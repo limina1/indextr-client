@@ -51,7 +51,7 @@
   }
 </script>
 
-<Card class='ArticleBox card-leather w-80'>
+<Card class='ArticleBox card-leather w-lg'>
   <div class='flex flex-col space-y-4'>
     <a href="/{href}" on:click={handleSendEvents}>
       <h2>{title}</h2>

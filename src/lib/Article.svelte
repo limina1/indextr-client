@@ -1,46 +1,73 @@
 <script lang="ts">
   import { ndk } from '$lib/ndk';
-  import Toc from '$lib/components/Toc.svelte';
-  import Notes from '$lib/components/Note.svelte';
   import { idList } from '$lib/stores';
   import type { NDKEvent } from '@nostr-dev-kit/ndk';
   import { page } from '$app/stores';
-  import { Sidebar, SidebarGroup, SidebarItem, SidebarWrapper } from 'flowbite-svelte';
+  import { Heading, Sidebar, SidebarGroup, SidebarItem, SidebarWrapper, Skeleton, TextPlaceholder } from 'flowbite-svelte';
+  import showdown from 'showdown';
+  import { sineIn } from 'svelte/easing';
+  import { onMount } from 'svelte';
   
-  $: activeUrl = $page.url.pathname;
+  $: activeHash = $page.url.hash;
 
-  let events: NDKEvent[] = [];
-
-  async function getEvents() {
-    $idList.forEach(async (id) => {
-      const event = await $ndk.fetchEvent(id);
-      events = [...events, event];
-    });
+  async function getEvents(): Promise<NDKEvent[]> {
+    const eventPromises = $idList.map(async (id) => await $ndk.fetchEvent(id));
+    const events = await Promise.all(eventPromises);
+    return events.filter((event) => event != null);
   }
+
+  const converter = new showdown.Converter();
+
+  const transitionParams = {
+    x: -320,
+    duration: 200,
+    easing: sineIn
+  };
+
+  let width: number;
+  let breakpoint: number = 768; // Tailwind md breakpoint
+  let drawerHidden: boolean = false;
+  $: width >= breakpoint
+    ? drawerHidden = false
+    : drawerHidden = true;
+  onMount(() => {
+    width >= breakpoint
+      ? drawerHidden = false
+      : drawerHidden = true;
+  });
 </script>
 
-{#await getEvents() then article}
-  <Sidebar {activeUrl}>
+{#await getEvents()}
+  <Sidebar class='sidebar-leather fixed top-20 left-0 px-4 w-60'>
+    <SidebarWrapper>
+      <Skeleton/>
+    </SidebarWrapper>
+  </Sidebar>
+  <TextPlaceholder class='max-w-2xl'/>
+{:then events}
+  <!-- TODO: Collapse the sidebar when the page gets below a certain width. -->
+  <!-- TODO: Handle hash paths for navigation within the article. -->
+  <Sidebar class='sidebar-leather fixed top-20 left-0 px-4 w-60' {activeHash}>
     <SidebarWrapper>
       <SidebarGroup>
         {#each events as event}
           <SidebarItem
-            title={event.getMatchingTags('title')[0][1]}
-            href={nip19.noteEncode(event.id)}
+            class='sidebar-item-leather'
+            label={event.getMatchingTags('title')[0][1]}
+            href={`${$page.url.pathname}#${event.getMatchingTags('title')[0][1]}`}
           />
         {/each}
       </SidebarGroup>
     </SidebarWrapper>
   </Sidebar>
-<!-- <div class="article">
-    <div class="toc">
-      <Toc notes={events} />
-    </div>
-
-    <div class="article-content">
-      <Notes notes={events} />
-    </div>
-  </div> -->
+  <div class='flex flex-col space-y-4 max-w-2xl'>
+    {#each events as event}
+      <div class='note-leather flex flex-col space-y-2'>
+        <Heading tag='h3' class='h-leather'>{event.getMatchingTags('title')[0][1]}</Heading>
+        {@html converter.makeHtml(event.content)}
+      </div>
+    {/each}
+  </div>
 {/await}
 
 <style>

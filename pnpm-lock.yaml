@@ -57,6 +57,9 @@ importers:
       '@types/markdown-it':
         specifier: ^13.0.7
         version: 13.0.7
+      '@types/showdown':
+        specifier: ^2.0.6
+        version: 2.0.6
       autoprefixer:
         specifier: ^10.4.17
         version: 10.4.17(postcss@8.4.33)
@@ -506,6 +509,9 @@ packages:
 
   '@types/pug@2.0.10':
     resolution: {integrity: sha512-Sk/uYFOBAB7mb74XcpizmH0KOR2Pv3D2Hmrh1Dmy5BmK3MpdSa5kqZcg6EKBdklU0bFXX9gCfzvpnyUehrPIuA==}
+
+  '@types/showdown@2.0.6':
+    resolution: {integrity: sha512-pTvD/0CIeqe4x23+YJWlX2gArHa8G0J0Oh6GKaVXV7TAeickpkkZiNOgFcFcmLQ5lB/K0qBJL1FtRYltBfbGCQ==}
 
   '@typescript-eslint/types@6.21.0':
     resolution: {integrity: sha512-1kFmZ1rOm5epu9NZEZm1kckCDGj5UJEf7P1kliH4LKu/RkwpsfqqGmY2OOcUs18lSlQBKLDYBOGxRVtrMN5lpg==}
@@ -2315,6 +2321,8 @@ snapshots:
   '@types/mdurl@1.0.5': {}
 
   '@types/pug@2.0.10': {}
+
+  '@types/showdown@2.0.6': {}
 
   '@typescript-eslint/types@6.21.0': {}
 

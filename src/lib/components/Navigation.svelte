@@ -1,6 +1,5 @@
 <script lang="ts">
   import { DarkMode, Navbar, NavLi, NavUl, NavHamburger, NavBrand } from 'flowbite-svelte';
-  import { HomeSolid } from 'flowbite-svelte-icons';
 
   let className: string;
   export { className as class };
@@ -11,8 +10,6 @@
     <NavBrand href='./'>
       <h1 class='font-serif'>Alexandria</h1>
     </NavBrand>
-    <!-- TODO: Restyle the dark mode icon. -->
-    <DarkMode btnClass='btn-leather p-4'/>
   </div>
   <NavHamburger class='btn-leather' />
   <NavUl class='ul-leather'>
@@ -20,5 +17,8 @@
     <NavLi href='./create'>New Note</NavLi>
     <NavLi href='./visualize'>Visualize</NavLi>
     <NavLi href='./login'>Login</NavLi>
+    <NavLi>
+      <DarkMode btnClass='btn-leather p-0'/>
+    </NavLi>
   </NavUl>
 </Navbar>

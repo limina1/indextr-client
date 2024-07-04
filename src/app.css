@@ -5,16 +5,16 @@
 @layer components {
   /* General */
   .leather {
-    @apply bg-primary-1000 dark:bg-primary-0;
+    @apply bg-primary-0 dark:bg-primary-1000 text-gray-800 dark:text-gray-300;
   }
 
   /* Button */
   button.btn-leather.text-white {
-    @apply text-primary-1000;
+    @apply text-primary-0;
   }
 
   .btn-leather span svg {
-    @apply fill-gray-700 hover:fill-primary-400 dark:fill-gray-400 dark:hover:fill-primary-700;
+    @apply fill-gray-800 hover:fill-primary-400 dark:fill-gray-300 dark:hover:fill-primary-500;
   }
 
   .btn-leather.text-xs {
@@ -35,7 +35,7 @@
 
   /* Card */
   div.card-leather {
-    @apply bg-primary-1000 dark:bg-primary-0 border-gray-200 has-[:hover]:border-primary-400 dark:border-gray-700 dark:has-[:hover]:border-primary-700;
+    @apply bg-primary-0 dark:bg-primary-1000 border-gray-200 has-[:hover]:border-primary-800 dark:border-gray-800 dark:has-[:hover]:border-primary-500;
   }
 
   div.card-leather h1,
@@ -44,12 +44,26 @@
   div.card-leather h4,
   div.card-leather h5,
   div.card-leather h6 {
-  @apply text-gray-700 hover:text-primary-400 dark:text-gray-400 dark:hover:text-primary-700;
+    @apply text-gray-800 hover:text-primary-400 dark:text-gray-300 dark:hover:text-primary-500;
+  }
+
+  /* Content */
+  div.note-leather {
+    @apply bg-primary-0 dark:bg-primary-1000 text-gray-800 dark:text-gray-300 hover:bg-primary-100 dark:hover:bg-primary-800 p-2 rounded;
+  }
+
+  /* Heading */
+  h1.h-leather,
+  h2.h-leather,
+  h3.h-leather,
+  h4.h-leather,
+  h5.h-leather {
+    @apply text-gray-800 dark:text-gray-300;
   }
 
   /* Modal */
   div.modal-leather > div {
-    @apply bg-primary-1000 dark:bg-primary-0 border-b-[1px] border-gray-700 dark:border-gray-400;
+    @apply bg-primary-0 dark:bg-primary-1000 border-b-[1px] border-gray-800 dark:border-gray-500;
   }
 
   div.modal-leather > div > h1, 
@@ -58,20 +72,20 @@
   div.modal-leather > div > h4, 
   div.modal-leather > div > h5, 
   div.modal-leather > div > h6 {
-    @apply text-gray-700 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-400;
+    @apply text-gray-800 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-300;
   }
 
   div.modal-leather button {
-    @apply bg-primary-1000 hover:bg-primary-1000 dark:bg-primary-0 dark:hover:bg-primary-0 text-gray-700 hover:text-primary-400 dark:text-gray-400 dark:hover:text-primary-700;
+    @apply bg-primary-0 hover:bg-primary-0 dark:bg-primary-1000 dark:hover:bg-primary-1000 text-gray-800 hover:text-primary-400 dark:text-gray-300 dark:hover:text-primary-500;
   }
 
   /* Navbar */
   nav.navbar-leather {
-    @apply bg-primary-1000 dark:bg-primary-0;
+    @apply bg-primary-0 dark:bg-primary-1000;
   }
 
   nav.navbar-leather svg {
-    @apply fill-gray-700 hover:fill-primary-400 dark:fill-gray-400 dark:hover:fill-primary-700;
+    @apply fill-gray-800 hover:fill-primary-400 dark:fill-gray-300 dark:hover:fill-primary-500;
   }
 
   nav.navbar-leather h1,
@@ -80,16 +94,25 @@
   nav.navbar-leather h4,
   nav.navbar-leather h5,
   nav.navbar-leather h6 {
-    @apply text-gray-700 hover:text-primary-400 dark:text-gray-400 dark:hover:text-primary-700;
+    @apply text-gray-800 hover:text-primary-400 dark:text-gray-300 dark:hover:text-primary-500;
+  }
+
+  /* Sidebar */
+  aside.sidebar-leather > div {
+    @apply bg-gray-100 dark:bg-gray-900;
+  }
+
+  a.sidebar-item-leather {
+    @apply hover:bg-primary-100 dark:hover:bg-primary-800;
   }
 
   /* Tooltip */
   div.tooltip-leather {
-    @apply text-gray-700 dark:text-gray-400;
+    @apply text-gray-800 dark:text-gray-300;
   }
 
   /* Unordered list */
   .ul-leather li a {
-    @apply text-gray-700 hover:text-primary-400 dark:text-gray-400 dark:hover:text-primary-700;
+    @apply text-gray-800 hover:text-primary-400 dark:text-gray-300 dark:hover:text-primary-500;
   }
 }
