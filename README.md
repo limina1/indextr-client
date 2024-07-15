@@ -1,19 +1,46 @@
+![Roman scrolls](https://i.nostr.build/M5qXa.jpg) 
+
 # Alexandria
 
-Alexandria is a nostr knowledge base (NKB).
+Alexandria is a Nostr Knowledge Base (NKB) and a reader for long-form articles. 
+ 
+## Features 
+ 
+### Elegant Design 
+ 
+As Alexandria is targeted toward those who are trying to focus on longer, more-complex content, the design has been stripped down of any distracting elements or unnecessary details, so that the user can concentrate on the valuable information stored in the documents that they are viewing. Both light-mode and dark-mode are available. 
+ 
+![Menu](https://i.nostr.build/4oAlm.png) 
+ 
+![event display](https://i.nostr.build/KG2D2.png) 
+ 
+![cards](https://i.nostr.build/Vwkl0.png) 
+ 
+### Modular articles 
+ 
+The specialty of this client is the ability to display long-form articles, particularly of the modular variety: event kinds [30040 and 30041](https://next.nostrudel.ninja/#/wiki/topic/nkbip-01). It will eventually also able to display wiki pages (event kind [30818](https://next.nostrudel.ninja/#/wiki/topic/nip-54)) and normal long-form articles (event kind [30023](https://next.nostrudel.ninja/#/wiki/topic/nip-23)). 
+ 
+Modular articles are often referred to as the *Nostr eBook format*, with 30040 events containing the metadata and the ordered list of the 30041 notes, which contain the markdown-formatted content. 
+ 
+### Write articles 
+ 
+Alexandria features a markdown-upload facility, for you to transform your well-formatted text to Nostr events and publish them to your preferred relays. The GitCitadel relay is set as the default, to ensure that you have at least one relay that is sure to work. 
+ 
+Simply make sure to structure the article content like so: 
+ 
+``` 
+# title (mind the space) 
+ 
+## topic1 
+ 
+text that you want displayed as content 
+ 
+## topic2 
+ 
+more text 
+ 
+``` 
 
-## Requests for help and feedback
-- Rendering other note types. Heterogeneous articles can potentially include any other kind - 0, 1, 1808, 30023, sandboxed executable code, images with captions External API calls to other interactive services (e.g. music notes that play audio when clicking)
-- Article creation and uploading within the browser. Currently, articles are created and uploaded through NodeJS, would be nice for user entry fields.
-- Design requests
-# Screenshot
-- Home Page, Displays Kind 30040 and article metadata
-![home page](./images/homepage.png)
-- Article Page. Composes article from notes (kind 30041, but potentially any other renderable kind) listed from the 30040 event
-![article page](./images/article_page.png)
-
-
-Still under development. Read more [here](https://github.com/limina1/indextr-principles/tree/main/details.md).
 ## Developing
 
 Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
