@@ -1,6 +1,6 @@
-# indextr
+# Alexandria
 
-indextr is a nostr knowledge base (NKB).
+Alexandria is a nostr knowledge base (NKB).
 
 ## Requests for help and feedback
 - Rendering other note types. Heterogeneous articles can potentially include any other kind - 0, 1, 1808, 30023, sandboxed executable code, images with captions External API calls to other interactive services (e.g. music notes that play audio when clicking)
