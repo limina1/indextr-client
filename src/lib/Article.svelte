@@ -1,11 +1,12 @@
 <script lang="ts">
   import { ndk } from '$lib/ndk';
-  import { idList, isLeftHamburgerMenuInUse, leftHamburgerMenuHrefs, leftHamburgerMenuItems } from '$lib/stores';
+  import { idList, isLeftMenuMenuInUse, showLeftMenu } from '$lib/stores';
   import type { NDKEvent } from '@nostr-dev-kit/ndk';
   import { page } from '$app/stores';
-  import { Heading, Sidebar, SidebarGroup, SidebarItem, SidebarWrapper, Skeleton, TextPlaceholder } from 'flowbite-svelte';
+  import { Button, Heading, Sidebar, SidebarGroup, SidebarItem, SidebarWrapper, Skeleton, TextPlaceholder, Tooltip } from 'flowbite-svelte';
   import showdown from 'showdown';
   import { onMount } from 'svelte';
+  import { BookOutline } from 'flowbite-svelte-icons';
   
   $: activeHash = $page.url.hash;
 
@@ -13,24 +14,7 @@
     const eventPromises = $idList.map(async (id) => await $ndk.fetchEvent(id));
     const events = await Promise.all(eventPromises);
     
-    const filteredEvents = events.filter((event) => event != null);
-
-    const eventNames: string[] = [];
-    const eventHrefs = new Map<string, string>();
-
-    filteredEvents.forEach(event => {
-      const title = event.getMatchingTags('title')[0][1];
-
-      eventNames.push(title);
-      
-      const normalizedTitle = normalizeHashPath(title);
-      eventHrefs.set(title, `${$page.url.pathname}#${normalizedTitle}`);
-    });
-
-    leftHamburgerMenuItems.set(eventNames);
-    leftHamburgerMenuHrefs.set(eventHrefs);
-
-    return filteredEvents;
+    return events.filter((event) => event != null);
   }
 
   function normalizeHashPath(str: string): string {
@@ -57,21 +41,49 @@
     }
   }
 
-  const sidebarBreakpointWidth = 1140;
-  const setLeftHamburgerMenuInUse = () => {
-    isLeftHamburgerMenuInUse.set(window.innerWidth < sidebarBreakpointWidth ? true : false);
+  let showToc: boolean = true;
+  let showTocButton: boolean = false;
+  const tocBreakpoint = 1140;
+
+  /**
+   * Hides the table of contents sidebar when the window shrinks below a certain size.  This
+   * prevents the sidebar from occluding the article content.
+   */
+  const setTocVisibilityOnResize = () => {
+    showToc = window.innerWidth >= tocBreakpoint;
+    showTocButton = window.innerWidth < tocBreakpoint;
+  };
+
+  /**
+   * Hides the table of contents sidebar when the user clicks outside of it.
+   */
+  const hideTocOnClick = (ev: MouseEvent) => {
+    const target = ev.target as HTMLElement;
+
+    if (target.closest('.sidebar-leather') || target.closest('.btn-leather')) {
+      return;
+    }
+
+    if (showToc) {
+      showToc = false;
+    }
   };
 
   onMount(() => {
+    // Always check whether the TOC sidebar should be visible.
+    setTocVisibilityOnResize();
+
     window.addEventListener('hashchange', scrollToElementWithOffset);
     // Also handle the case where the user lands on the page with a hash in the URL
     scrollToElementWithOffset();
 
-    window.addEventListener('resize', setLeftHamburgerMenuInUse);
+    window.addEventListener('resize', setTocVisibilityOnResize);
+    window.addEventListener('click', hideTocOnClick);
 
     return () => {
       window.removeEventListener('hashchange', scrollToElementWithOffset);
-      window.removeEventListener('resize', setLeftHamburgerMenuInUse);
+      window.removeEventListener('resize', setTocVisibilityOnResize);
+      window.removeEventListener('click', hideTocOnClick);
     };
   });
 
@@ -79,16 +91,29 @@
 </script>
 
 {#await getEvents()}
-  {#if !$isLeftHamburgerMenuInUse}
-    <Sidebar class='sidebar-leather fixed top-20 left-0 px-4 w-60'>
-      <SidebarWrapper>
-        <Skeleton/>
-      </SidebarWrapper>
-    </Sidebar>
-    <TextPlaceholder class='max-w-2xl'/>
-  {/if}
+  <Sidebar class='sidebar-leather fixed top-20 left-0 px-4 w-60'>
+    <SidebarWrapper>
+      <Skeleton/>
+    </SidebarWrapper>
+  </Sidebar>
+  <TextPlaceholder class='max-w-2xl'/>
 {:then events}
-  {#if !$isLeftHamburgerMenuInUse}
+  {#if showTocButton && !showToc}
+    <Button
+      class='btn-leather fixed top-20 left-4 h-6 w-6'
+      outline={true}
+      on:click={ev => {
+        showToc = true;
+        ev.stopPropagation();
+      }}
+    >
+      <BookOutline />
+    </Button>
+    <Tooltip>
+      Show Table of Contents
+    </Tooltip>
+  {/if}
+  {#if showToc}
     <Sidebar class='sidebar-leather fixed top-20 left-0 px-4 w-60' {activeHash}>
       <SidebarWrapper>
         <SidebarGroup class='sidebar-group-leather overflow-y-scroll'>
