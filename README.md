@@ -29,7 +29,7 @@ Alexandria features a markdown-upload facility, for you to transform your well-f
 Simply make sure to structure the article content like so: 
  
 ``` 
-# title (mind the space) 
+# title
  
 ## topic1 
  
