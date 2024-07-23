@@ -1,17 +1,23 @@
 <script lang="ts">
   import { ndk } from '$lib/ndk';
-  import { idList, isLeftMenuMenuInUse, showLeftMenu } from '$lib/stores';
+  import { idList } from '$lib/stores';
   import type { NDKEvent } from '@nostr-dev-kit/ndk';
   import { page } from '$app/stores';
   import { Button, Heading, Sidebar, SidebarGroup, SidebarItem, SidebarWrapper, Skeleton, TextPlaceholder, Tooltip } from 'flowbite-svelte';
   import showdown from 'showdown';
   import { onMount } from 'svelte';
   import { BookOutline } from 'flowbite-svelte-icons';
+
+  export let event: NDKEvent | null;
   
   $: activeHash = $page.url.hash;
 
   async function getEvents(): Promise<NDKEvent[]> {
-    const eventPromises = $idList.map(async (id) => await $ndk.fetchEvent(id));
+    if (event == null) {
+      // TODO: Add error handling.
+    }
+
+    const eventPromises = await $ndk.fetchEvents(event!.filter());
     const events = await Promise.all(eventPromises);
     
     return events.filter((event) => event != null);

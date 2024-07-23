@@ -1,11 +1,10 @@
 <script lang="ts">
   import ArticleHeader from "$lib/ArticleHeader.svelte";
   import { ndk } from "$lib/ndk";
-  import { nip19 } from "nostr-tools";
-  import { idList } from "$lib/stores";
   const kind = 30040;
   const count: number = 10;
 
+  // TODO: Add more filter parameters to customize the event feed.
   async function loadEvents() {
     const eventlist = await $ndk.fetchEvents({ kinds: [kind] });
     return eventlist;
@@ -17,7 +16,7 @@
   {#await eventlist}
     <p>Loading...</p>
   {:then events}
-    {#each Array.from(events) as event, i}
+    {#each Array.from(events) as event}
       <ArticleHeader {event} />
     {/each}
   {/await}

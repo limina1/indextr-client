@@ -4,13 +4,23 @@ import NDKCacheAdapterDexie from '@nostr-dev-kit/ndk-cache-dexie';
 import { writable, type Writable } from 'svelte/store';
 import { standardRelays } from './consts';
 
-const relays = JSON.parse(
-  (browser && localStorage.getItem('wikinostr_relays')) || JSON.stringify(standardRelays)
-);
+export function getStoredNdkConfig() {
+  const relays = JSON.parse(
+    (browser && localStorage.getItem('alexandria_relays')) || JSON.stringify(standardRelays)
+  );
+  
+  const dexieAdapter = new NDKCacheAdapterDexie({ dbName: 'alexandria-ndk-cache-db' });
 
-const dexieAdapter = new NDKCacheAdapterDexie({ dbName: 'indextr-ndk-cache-db' });
+  return { relays, dexieAdapter };
+}
 
-const Ndk: NDK = new NDK({ explicitRelayUrls: relays, cacheAdapter: dexieAdapter });
-Ndk.connect().then(() => console.log('ndk connected'));
+export function getNdkInstance() {
+  const { relays, dexieAdapter } = getStoredNdkConfig();
 
-export const ndk: Writable<NDK> = writable(Ndk);
+  const ndk = new NDK({ explicitRelayUrls: relays, cacheAdapter: dexieAdapter });
+  ndk.connect().then(() => console.log('ndk connected'));
+
+  return ndk;
+}
+
+export const ndk: Writable<NDK> = writable(getNdkInstance());

@@ -1,6 +1,6 @@
 {
-  "name": "nostrwiki",
-  "version": "0.0.1",
+  "name": "alexandria",
+  "version": "0.0.3",
   "private": true,
   "type": "module",
   "scripts": {

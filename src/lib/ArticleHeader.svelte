@@ -5,7 +5,6 @@
   import { idList } from "$lib/stores";
   import { Card, Button, Modal, Tooltip } from "flowbite-svelte";
   import { ClipboardCheckOutline, ClipboardCleanOutline, CodeOutline, ShareNodesOutline } from "flowbite-svelte-icons";
-  import type { SvelteComponent } from "svelte";
 
   export let event: NDKEvent;
   const title: string = JSON.parse(event.content).title;
