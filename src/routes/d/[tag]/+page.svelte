@@ -4,7 +4,7 @@
 
   export let data: PageData;
 
-  let { event } = data;
+  $: ({ event } = data);
 </script>
 
 <main>

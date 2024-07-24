@@ -1,27 +1,31 @@
 <script lang="ts">
   import { ndk } from '$lib/ndk';
-  import { idList } from '$lib/stores';
   import type { NDKEvent } from '@nostr-dev-kit/ndk';
   import { page } from '$app/stores';
   import { Button, Heading, Sidebar, SidebarGroup, SidebarItem, SidebarWrapper, Skeleton, TextPlaceholder, Tooltip } from 'flowbite-svelte';
   import showdown from 'showdown';
   import { onMount } from 'svelte';
   import { BookOutline } from 'flowbite-svelte-icons';
+  import { alexandriaKinds } from './stores';
 
-  export let event: NDKEvent | null;
-  
-  $: activeHash = $page.url.hash;
+  export let event: NDKEvent | null | undefined;
 
-  async function getEvents(): Promise<NDKEvent[]> {
-    if (event == null) {
+  async function getEvents(index?: NDKEvent | null | undefined): Promise<IterableIterator<NDKEvent>> {
+    if (index == null) {
       // TODO: Add error handling.
     }
 
-    const eventPromises = await $ndk.fetchEvents(event!.filter());
-    const events = await Promise.all(eventPromises);
+    const eventSet = await $ndk.fetchEvents({
+      kinds: $alexandriaKinds,
+      ids: index!.getMatchingTags('e').map((value) => value[1]),
+    });
     
-    return events.filter((event) => event != null);
+    return eventSet.values();
   }
+
+  $: eventPromises = getEvents(event);
+  
+  $: activeHash = $page.url.hash;
 
   function normalizeHashPath(str: string): string {
     return str
@@ -96,7 +100,7 @@
   const converter = new showdown.Converter();
 </script>
 
-{#await getEvents()}
+{#await eventPromises}
   <Sidebar class='sidebar-leather fixed top-20 left-0 px-4 w-60'>
     <SidebarWrapper>
       <Skeleton/>
