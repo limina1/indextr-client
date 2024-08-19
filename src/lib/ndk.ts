@@ -17,7 +17,12 @@ export function getStoredNdkConfig() {
 export function getNdkInstance() {
   const { relays, dexieAdapter } = getStoredNdkConfig();
 
-  const ndk = new NDK({ explicitRelayUrls: relays, cacheAdapter: dexieAdapter });
+  const ndk = new NDK({
+    autoConnectUserRelays: true,
+    cacheAdapter: dexieAdapter,
+    enableOutboxModel: true,
+    explicitRelayUrls: relays,
+  });
   ndk.connect().then(() => console.log('ndk connected'));
 
   return ndk;

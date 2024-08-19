@@ -1,5 +1,6 @@
 <script lang="ts">
   import { DarkMode, Navbar, NavLi, NavUl, NavHamburger, NavBrand } from 'flowbite-svelte';
+    import Login from './Login.svelte';
 
   let className: string;
   export { className as class };
@@ -13,12 +14,14 @@
       <h1 class='font-serif'>Alexandria</h1>
     </NavBrand>
   </div>
-  <NavHamburger class='btn-leather' />
+  <div class='flex md:order-2'>
+    <Login />
+    <NavHamburger class='btn-leather' />
+  </div>
   <NavUl class='ul-leather'>
     <NavLi href='./about'>About</NavLi>
     <NavLi href='./new/edit'>New Note</NavLi>
     <NavLi href='./visualize'>Visualize</NavLi>
-    <NavLi href='./login'>Login</NavLi>
     <NavLi>
       <DarkMode btnClass='btn-leather p-0'/>
     </NavLi>
