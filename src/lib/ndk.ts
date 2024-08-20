@@ -29,3 +29,5 @@ export function getNdkInstance() {
 }
 
 export const ndk: Writable<NDK> = writable(getNdkInstance());
+
+export const signedIn: Writable<boolean> = writable(false);

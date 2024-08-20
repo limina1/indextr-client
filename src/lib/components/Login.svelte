@@ -1,9 +1,8 @@
 <script lang='ts'>
   import { Avatar, Button, Popover } from 'flowbite-svelte';
   import NDK, { NDKNip07Signer, type NDKUserProfile } from '@nostr-dev-kit/ndk';
-  import { ndk } from '$lib/ndk';
+  import { signedIn, ndk } from '$lib/ndk';
 
-  let signedIn: boolean = false;
   let profile: NDKUserProfile | null = null;
 
   const signInWithExtension = async () => {
@@ -14,15 +13,12 @@
     $ndk.signer = signer;
     $ndk.activeUser = user;
 
-    const connectPromise = $ndk.connect();
-    const fetchProfilePromise = user.fetchProfile();
-
-    const [_, extensionUserProfile] = await Promise.all([connectPromise, fetchProfilePromise]);
-    profile = extensionUserProfile;
+    await $ndk.connect();
+    profile = await user.fetchProfile();
 
     console.log('NDK signed in with extension and reconnected.');
 
-    signedIn = true;
+    $signedIn = true;
   };
 
   const signInWithBunker = () => {
@@ -30,7 +26,7 @@
   };
 </script>
 
-{#if signedIn}
+{#if $signedIn}
   <Avatar
     rounded
     class='h-6 w-6 m-4 cursor-pointer'
