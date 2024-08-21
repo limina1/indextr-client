@@ -5,10 +5,20 @@
   import { idList } from "$lib/stores";
   import { Card, Button, Modal, Tooltip } from "flowbite-svelte";
   import { ClipboardCheckOutline, ClipboardCleanOutline, CodeOutline, ShareNodesOutline } from "flowbite-svelte-icons";
+  import { ndk } from "./ndk";
 
   export let event: NDKEvent;
-  const title: string = JSON.parse(event.content).title;
-  const href: string = neventEncode(event);
+
+  let title: string;
+  let href: string;
+
+  try {
+    const relays = $ndk.activeUser?.relayUrls ?? standardRelays;
+    title = JSON.parse(event.content).title;
+    href = neventEncode(event, relays);
+  } catch (e) {
+    console.warn(e);
+  }
 
   const handleSendEvents = () => {
     $idList = [];
@@ -50,33 +60,35 @@
   }
 </script>
 
-<Card class='ArticleBox card-leather w-lg'>
-  <div class='flex flex-col space-y-4'>
-    <a href="/{href}" on:click={handleSendEvents}>
-      <h2>{title}</h2>
-    </a>
-    <div class='w-full flex space-x-2 justify-end'>
-      <Button class='btn-leather' size='xs' on:click={shareNjump}><ShareNodesOutline /></Button>
-      <Tooltip class='tooltip-leather' type='auto' placement='top' on:show={() => shareLinkCopied = false}>
-        {#if shareLinkCopied}
-          <ClipboardCheckOutline />
-        {:else}
-          Share via NJump
-        {/if}
-      </Tooltip>
-      <Button class='btn-leather' size='xs' outline on:click={copyEventId}><ClipboardCleanOutline /></Button>
-      <Tooltip class='tooltip-leather' type='auto' placement='top' on:show={() => eventIdCopied = false}>
-        {#if eventIdCopied}
-          <ClipboardCheckOutline />
-        {:else}
-          Copy event ID
-        {/if}
-      </Tooltip>
-      <Button class='btn-leather' size='xs' outline on:click={viewJson}><CodeOutline /></Button>
-      <Tooltip class='tooltip-leather' type='auto' placement='top'>View JSON</Tooltip>
+{#if title != null && href != null}
+  <Card class='ArticleBox card-leather w-lg'>
+    <div class='flex flex-col space-y-4'>
+      <a href="/{href}" on:click={handleSendEvents}>
+        <h2>{title}</h2>
+      </a>
+      <div class='w-full flex space-x-2 justify-end'>
+        <Button class='btn-leather' size='xs' on:click={shareNjump}><ShareNodesOutline /></Button>
+        <Tooltip class='tooltip-leather' type='auto' placement='top' on:show={() => shareLinkCopied = false}>
+          {#if shareLinkCopied}
+            <ClipboardCheckOutline />
+          {:else}
+            Share via NJump
+          {/if}
+        </Tooltip>
+        <Button class='btn-leather' size='xs' outline on:click={copyEventId}><ClipboardCleanOutline /></Button>
+        <Tooltip class='tooltip-leather' type='auto' placement='top' on:show={() => eventIdCopied = false}>
+          {#if eventIdCopied}
+            <ClipboardCheckOutline />
+          {:else}
+            Copy event ID
+          {/if}
+        </Tooltip>
+        <Button class='btn-leather' size='xs' outline on:click={viewJson}><CodeOutline /></Button>
+        <Tooltip class='tooltip-leather' type='auto' placement='top'>View JSON</Tooltip>
+      </div>
     </div>
-  </div>
-  <Modal class='modal-leather' title='Event JSON' bind:open={jsonModalOpen} autoclose outsideclose size='sm'>
-    <code>{JSON.stringify(event.rawEvent())}</code>
-  </Modal>
-</Card>
+    <Modal class='modal-leather' title='Event JSON' bind:open={jsonModalOpen} autoclose outsideclose size='sm'>
+      <code>{JSON.stringify(event.rawEvent())}</code>
+    </Modal>
+  </Card>
+{/if}

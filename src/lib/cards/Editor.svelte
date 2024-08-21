@@ -47,15 +47,15 @@
         let relays = await event.publish();
         relays.forEach((relay) => {
           relay.once('published', () => {
-            console.log('published to', relay);
+            console.debug('published to', relay);
           });
           relay.once('publish:failed', (relay, err) => {
-            console.log('publish failed to', relay, err);
+            console.debug('publish failed to', relay, err);
           });
         });
         success = 1;
       } catch (err) {
-        console.log('failed to publish event', err);
+        console.debug('failed to publish event', err);
         error = String(err);
         success = -1;
       }

@@ -4,7 +4,7 @@
 	export let notes: NDKEvent[] = [];
     // check if notes is empty
     if (notes.length === 0) {
-        console.log('notes is empty');
+        console.debug('notes is empty');
     }
 </script>
 

@@ -12,21 +12,21 @@
   let modal = false;
 
   function copyEventID() {
-    console.log("copyEventID");
+    console.debug("copyEventID");
     const relays: string[] = standardRelays;
     const naddr = neventEncode(event, relays);
     navigator.clipboard.writeText(naddr);
   }
   function viewJSON() {
-    console.log("viewJSON");
+    console.debug("viewJSON");
     modal = !modal;
-    console.log(modal);
+    console.debug(modal);
   }
 
   function shareNjump() {
     const relays: string[] = standardRelays;
     const naddr = neventEncode(event, relays);
-    console.log(naddr);
+    console.debug(naddr);
     navigator.clipboard.writeText(`njump.me/${naddr}`);
   }
 </script>

@@ -1,44 +1,53 @@
 <script lang="ts">
   import ArticleHeader from "$lib/ArticleHeader.svelte";
-  import { ndk, signedIn } from "$lib/ndk";
-  import { NDKRelaySet, type NDKUser } from "@nostr-dev-kit/ndk";
-  const kind = 30040;
-  const count: number = 10;
+  import { indexKind } from "$lib/consts";
+  import { ndk } from "$lib/ndk";
+  import { NDKEvent, NDKRelayList, NDKRelaySet, type NDKUser } from "@nostr-dev-kit/ndk";
 
-  async function loadEvents(user?: NDKUser) {
-    if (user == null) {
-      return $ndk.fetchEvents(
-        { kinds: [kind] },
-        { closeOnEose: true }
-      );
-    }
+  const getEvents = (): Promise<Set<NDKEvent>> =>
+    $ndk.fetchEvents(
+      // @ts-ignore
+      { kinds: [indexKind] },
+    );
 
-    const relays = await user.relayList();
-    const relaySet = NDKRelaySet.fromRelayUrls(relays!.readRelayUrls, $ndk);
-    
+  const getEventsFromUserRelays = (userRelays: NDKRelayList): Promise<Set<NDKEvent>> => {
+    const relaySet = NDKRelaySet.fromRelayUrls(userRelays!.readRelayUrls, $ndk);
+
     // TODO: Add more filter parameters to customize the event feed.
     return $ndk.fetchEvents(
-      { authors: [user.pubkey, ], kinds: [kind] },
-      { closeOnEose: true },
+      // @ts-ignore
+      { kinds: [indexKind] },
       relaySet,
     );
+  };
+
+  let user: NDKUser | null | undefined;
+  let readRelays: NDKRelayList | null | undefined;
+
+  $: {
+    user = $ndk.activeUser;
+    user?.relayList().then(relays => readRelays = relays);
   }
-
-  $: eventList = loadEvents($ndk.activeUser);
-
-  signedIn.subscribe(async isSignedIn => {
-    if (isSignedIn) {
-      eventList = loadEvents();
-    }
-  });
 </script>
 
 <div class='leather flex flex-col flex-grow-0 space-y-4 overflow-y-auto w-max'>
-  {#await eventList}
-    <p>Loading...</p>
-  {:then events}
-    {#each Array.from(events) as event}
-      <ArticleHeader {event} />
-    {/each}
-  {/await}
+  {#key user}
+    {#if user == null || readRelays == null}
+      {#await getEvents()}
+        <p>Loading...</p>
+      {:then events}
+        {#each Array.from(events) as event}
+          <ArticleHeader {event} />
+        {/each}
+      {/await}
+    {:else}
+      {#await getEventsFromUserRelays(readRelays)}
+        <p>Loading...</p>
+      {:then events}
+        {#each Array.from(events) as event}
+          <ArticleHeader {event} />
+        {/each}
+      {/await}
+    {/if}
+  {/key}
 </div>

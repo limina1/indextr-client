@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import NDK, { NDKEvent, NDKNip07Signer } from '@nostr-dev-kit/ndk';
+import NDK from '@nostr-dev-kit/ndk';
 import NDKCacheAdapterDexie from '@nostr-dev-kit/ndk-cache-dexie';
 import { writable, type Writable } from 'svelte/store';
 import { standardRelays } from './consts';
@@ -23,7 +23,7 @@ export function getNdkInstance() {
     enableOutboxModel: true,
     explicitRelayUrls: relays,
   });
-  ndk.connect().then(() => console.log('ndk connected'));
+  ndk.connect().then(() => console.debug('ndk connected'));
 
   return ndk;
 }

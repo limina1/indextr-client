@@ -2,7 +2,7 @@
 	import type { NDKEvent } from '@nostr-dev-kit/ndk';
  	import {nip19} from 'nostr-tools';
 	export let notes: NDKEvent[] = [];
-    console.log(notes);
+    console.debug(notes);
 </script>
 
 <div class="toc">

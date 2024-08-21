@@ -16,7 +16,7 @@
     await $ndk.connect();
     profile = await user.fetchProfile();
 
-    console.log('NDK signed in with extension and reconnected.');
+    console.debug('NDK signed in with extension and reconnected.');
 
     $signedIn = true;
   };
