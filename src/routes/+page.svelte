@@ -2,25 +2,23 @@
   import ArticleHeader from "$lib/ArticleHeader.svelte";
   import { FeedType, indexKind } from "$lib/consts";
   import { ndk } from "$lib/ndk";
-  import { NDKEvent, NDKRelayList, NDKRelaySet, NDKSubscriptionCacheUsage, type NDKUser } from "@nostr-dev-kit/ndk";
-  import { Button, Dropdown, Radio } from "flowbite-svelte";
+  import { filterValidIndexEvents } from "$lib/utils";
+  import { NDKEvent, NDKRelayList, NDKRelaySet, type NDKUser } from "@nostr-dev-kit/ndk";
+  import { Button, Dropdown, Radio, Skeleton } from "flowbite-svelte";
   import { ChevronDownOutline } from "flowbite-svelte-icons";
 
   const getEvents = (): Promise<Set<NDKEvent>> =>
-    $ndk.fetchEvents(
-      // @ts-ignore
-      { kinds: [indexKind] },
-    );
+    // @ts-ignore
+    $ndk.fetchEvents({ kinds: [indexKind] }).then(filterValidIndexEvents);
 
   const getEventsFromUserRelays = (userRelays: NDKRelayList): Promise<Set<NDKEvent>> => {
     const relaySet = NDKRelaySet.fromRelayUrls(userRelays!.readRelayUrls, $ndk);
 
-    // TODO: Add more filter parameters to customize the event feed.
     return $ndk.fetchEvents(
       // @ts-ignore
       { kinds: [indexKind] },
       relaySet,
-    );
+    ).then(filterValidIndexEvents);
   };
 
   const getEventsFromUserFollows = (follows: Set<NDKUser>, userRelays: NDKRelayList): Promise<Set<NDKEvent>> => {
@@ -34,7 +32,7 @@
         kinds: [indexKind]
       },
       relaySet,
-    );
+    ).then(filterValidIndexEvents);
   };
 
   const getFeedTypeFriendlyName = (feedType: FeedType): string => {
@@ -47,6 +45,19 @@
       return '';
     }
   };
+
+  const getSkeletonIds = (): string[] => {
+    const skeletonHeight = 124; // The height of the skeleton component in pixels.
+
+    // Determine the number of skeletons to display based on the height of the screen.
+    const skeletonCount = Math.floor(window.innerHeight / skeletonHeight) - 2;
+
+    const skeletonIds = [];
+    for (let i = 0; i < skeletonCount; i++) {
+      skeletonIds.push(`skeleton-${i}`);
+    }
+    return skeletonIds;
+  }
 
   let user: NDKUser | null | undefined;
   let readRelays: NDKRelayList | null | undefined;
@@ -64,11 +75,17 @@
   {#key user}
     {#if user == null || readRelays == null}
       {#await getEvents()}
-        <p>Loading...</p>
-      {:then events}
-        {#each Array.from(events) as event}
-          <ArticleHeader {event} />
+        {#each getSkeletonIds() as id}
+          <Skeleton size='lg' id={id} />
         {/each}
+      {:then events}
+        {#if events.size > 0}
+          {#each Array.from(events) as event}
+            <ArticleHeader {event} />
+          {/each}
+        {:else}
+          <p class='text-center'>No articles found.</p>
+        {/if}
       {/await}
     {:else}
       <div class='leather w-full flex justify-end'>
@@ -86,19 +103,31 @@
       </div>
       {#if feedType === FeedType.Relays && readRelays != null}
         {#await getEventsFromUserRelays(readRelays)}
-          <p>Loading...</p>
-        {:then events}
-          {#each Array.from(events) as event}
-            <ArticleHeader {event} />
+          {#each getSkeletonIds() as id}
+            <Skeleton size='lg' id={id} />
           {/each}
+        {:then events}
+          {#if events.size > 0}
+            {#each Array.from(events) as event}
+              <ArticleHeader {event} />
+            {/each}
+          {:else}
+            <p class='text-center'>No articles found.</p>
+          {/if}
         {/await}
       {:else if feedType === FeedType.Follows && userFollows != null}
         {#await getEventsFromUserFollows(userFollows, readRelays)}
-          <p>Loading...</p>
-        {:then events}
-          {#each Array.from(events) as event}
-            <ArticleHeader {event} />
+          {#each getSkeletonIds() as id}
+            <Skeleton size='lg' id={id} />
           {/each}
+        {:then events}
+          {#if events.size > 0}
+            {#each Array.from(events) as event}
+              <ArticleHeader {event} />
+            {/each}
+          {:else}
+            <p class='text-center'>No articles found.</p>
+          {/if}
         {/await}
       {/if}
     {/if}
