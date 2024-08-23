@@ -94,7 +94,7 @@ export function filterValidIndexEvents(events: Set<NDKEvent>): Set<NDKEvent> {
   events.forEach(event => {
     // Index events have no content, and they must have `title`, `d`, and `e` tags.
     if (
-      event.content != null
+      (event.content != null && event.content.length > 0)
       || event.getMatchingTags('title').length === 0
       || event.getMatchingTags('d').length === 0
       || event.getMatchingTags('e').length === 0

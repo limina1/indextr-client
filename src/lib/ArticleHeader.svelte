@@ -14,7 +14,7 @@
 
   try {
     const relays = $ndk.activeUser?.relayUrls ?? standardRelays;
-    title = JSON.parse(event.content).title;
+    title = event.getMatchingTags('title')[0][1];
     href = neventEncode(event, relays);
   } catch (e) {
     console.warn(e);
