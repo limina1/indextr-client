@@ -1,32 +1,11 @@
-import { getNdkInstance } from "$lib/ndk";
-import type { NDKEvent, NDKKind } from "@nostr-dev-kit/ndk";
-import { error } from "@sveltejs/kit";
-import type { PageLoad } from "./$types";
-
-// MichaelJ - 23 July 2024 - Disable server-side rendering so that the load function can use the
-// browser's local storage to retrieve saved relays and the cache adapter for the NDK instance.
-export const ssr = false;
+import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ params }) => {
-  const ndk = getNdkInstance();
   const { tag } = params;
 
-  let events: Set<NDKEvent> = new Set();
-  let event: NDKEvent | null | undefined;
-
-  try {
-    events = await ndk.fetchEvents({
-      kinds: [30040 as NDKKind],
-      '#d': [tag],
-    });
-    event = events.values().next().value;
-  } catch (err) {
-    console.error(err);
-  }
-
-  if (events.size === 0) {
-    error(404, 'No events found with the given d tag.');
-  }
-
-  return { event };
+  return {
+    event: {
+      d: tag,
+    }
+  };
 };

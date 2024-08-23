@@ -10,7 +10,7 @@
 
 <Navbar class={`Navbar navbar-leather ${className}`}>
   <div class='flex flex-grow justify-between'>
-    <NavBrand href='./'>
+    <NavBrand href='/'>
       <h1 class='font-serif'>Alexandria</h1>
     </NavBrand>
   </div>

@@ -6,26 +6,27 @@
   import showdown from 'showdown';
   import { onMount } from 'svelte';
   import { BookOutline } from 'flowbite-svelte-icons';
-  import { alexandriaKinds } from './stores';
+  import { zettelKinds } from './consts';
 
-  export let event: NDKEvent | null | undefined;
+  export let index: NDKEvent | null | undefined;
 
-  async function getEvents(index?: NDKEvent | null | undefined): Promise<IterableIterator<NDKEvent>> {
+  $: activeHash = $page.url.hash;
+
+  const getEvents = async (index?: NDKEvent | null | undefined): Promise<Set<NDKEvent>> => {
     if (index == null) {
       // TODO: Add error handling.
     }
 
-    const eventSet = await $ndk.fetchEvents({
-      kinds: $alexandriaKinds,
-      ids: index!.getMatchingTags('e').map((value) => value[1]),
+    const eventIds = index!.getMatchingTags('e').map((value) => value[1]);
+    const events = await $ndk.fetchEvents({
+      // @ts-ignore
+      kinds: zettelKinds,
+      ids: eventIds,
     });
-    
-    return eventSet.values();
-  }
 
-  $: eventPromises = getEvents(event);
-  
-  $: activeHash = $page.url.hash;
+    console.debug(`Fetched ${events.size} events from ${eventIds.length} references.`);
+    return events;
+  };
 
   function normalizeHashPath(str: string): string {
     return str
@@ -100,7 +101,7 @@
   const converter = new showdown.Converter();
 </script>
 
-{#await eventPromises}
+{#await getEvents(index)}
   <Sidebar class='sidebar-leather fixed top-20 left-0 px-4 w-60'>
     <SidebarWrapper>
       <Skeleton/>

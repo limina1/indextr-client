@@ -11,7 +11,7 @@
   });
 </script>
 
-<div class={'leather h-full w-full flex flex-col items-center'}>
+<div class={'leather min-h-full w-full flex flex-col items-center'}>
   <Navigation class='sticky top-0' />
   <slot />
 </div>
