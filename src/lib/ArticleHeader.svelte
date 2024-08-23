@@ -1,8 +1,8 @@
 <script lang="ts">
+  import { page } from "$app/stores";
   import { neventEncode } from "$lib/utils";
   import type { NDKEvent } from "@nostr-dev-kit/ndk";
   import { standardRelays } from "./consts";
-  import { idList } from "$lib/stores";
   import { Card, Button, Modal, Tooltip } from "flowbite-svelte";
   import { ClipboardCheckOutline, ClipboardCleanOutline, CodeOutline, ShareNodesOutline } from "flowbite-svelte-icons";
   import { ndk } from "./ndk";
@@ -10,24 +10,23 @@
   export let event: NDKEvent;
 
   let title: string;
+  let author: string;
   let href: string;
 
-  try {
+  $: try {
     const relays = $ndk.activeUser?.relayUrls ?? standardRelays;
     title = event.getMatchingTags('title')[0][1];
-    href = neventEncode(event, relays);
+    author = event.getMatchingTags('author')[0][1];
+
+    const d = event.getMatchingTags('d')[0][1];
+    if (d != null) {
+      href = `d/${d}`;
+    } else {
+      href = neventEncode(event, relays);
+    }
   } catch (e) {
     console.warn(e);
   }
-
-  const handleSendEvents = () => {
-    $idList = [];
-    for (const id of event.tags
-      .filter((tag) => tag[0] === "e")
-      .map((tag) => tag[1])) {
-      $idList = [...$idList, id];
-    }
-  };
 
   let eventIdCopied: boolean = false;
   function copyEventId() {
@@ -63,8 +62,9 @@
 {#if title != null && href != null}
   <Card class='ArticleBox card-leather w-lg'>
     <div class='flex flex-col space-y-4'>
-      <a href="/{href}" on:click={handleSendEvents}>
-        <h2>{title}</h2>
+      <a href="/{href}" class='flex flex-col space-y-2'>
+        <h2 class='text-lg font-bold'>{title}</h2>
+        <h3 class='text-base font-normal'>by {author}</h3>
       </a>
       <div class='w-full flex space-x-2 justify-end'>
         <Button class='btn-leather' size='xs' on:click={shareNjump}><ShareNodesOutline /></Button>
