@@ -9,17 +9,19 @@ export function getStoredNdkConfig() {
     (browser && localStorage.getItem('alexandria_relays')) || JSON.stringify(standardRelays)
   );
   
-  const dexieAdapter = new NDKCacheAdapterDexie({ dbName: 'alexandria-ndk-cache-db' });
+  // const dexieAdapter = new NDKCacheAdapterDexie({ dbName: 'alexandria-ndk-cache-db' });
 
-  return { relays, dexieAdapter };
+  return {
+    relays,
+    // dexieAdapter,
+  };
 }
 
 export function getNdkInstance() {
-  const { relays, dexieAdapter } = getStoredNdkConfig();
+  const { relays } = getStoredNdkConfig();
 
   const ndk = new NDK({
     autoConnectUserRelays: true,
-    cacheAdapter: dexieAdapter,
     enableOutboxModel: true,
     explicitRelayUrls: relays,
   });

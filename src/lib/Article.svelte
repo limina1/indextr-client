@@ -18,11 +18,18 @@
     }
 
     const eventIds = index!.getMatchingTags('e').map((value) => value[1]);
-    const events = await $ndk.fetchEvents({
-      // @ts-ignore
-      kinds: zettelKinds,
-      ids: eventIds,
-    });
+    const events = await $ndk.fetchEvents(
+      {
+        // @ts-ignore
+        kinds: zettelKinds,
+        ids: eventIds,
+      },
+      { 
+        groupable: false,
+        skipVerification: false,
+        skipValidation: false
+      }
+  );
 
     console.debug(`Fetched ${events.size} events from ${eventIds.length} references.`);
     return events;

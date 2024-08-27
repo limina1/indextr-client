@@ -1,9 +1,18 @@
 <script lang='ts'>
   import { Avatar, Button, Popover } from 'flowbite-svelte';
-  import NDK, { NDKNip07Signer, type NDKUserProfile } from '@nostr-dev-kit/ndk';
+  import { NDKNip07Signer, type NDKUserProfile } from '@nostr-dev-kit/ndk';
   import { signedIn, ndk } from '$lib/ndk';
 
   let profile: NDKUserProfile | null = null;
+  let pfp: string | undefined = undefined;
+  let username: string | undefined = undefined;
+  let tag: string | undefined = undefined;
+
+  $: {
+    pfp = profile?.image;
+    username = profile?.name;
+    tag = profile?.name;
+  }
 
   const signInWithExtension = async () => {
     const signer = new NDKNip07Signer();
@@ -14,7 +23,7 @@
     $ndk.activeUser = user;
 
     await $ndk.connect();
-    profile = await user.fetchProfile();
+    profile = await $ndk.activeUser?.fetchProfile();
 
     console.debug('NDK signed in with extension and reconnected.');
 
@@ -30,16 +39,16 @@
   <Avatar
     rounded
     class='h-6 w-6 m-4 cursor-pointer'
-    src={profile?.image}
-    alt={profile?.displayName}
+    src={pfp}
+    alt={username}
   />
   <Popover
     class='popover-leather w-fit'
     placement='bottom'
     target='avatar'
   >
-    <h3 class='text-lg font-bold'>{profile?.displayName}</h3>
-    <h4 class='text-base'>@{profile?.name}</h4>
+    <h3 class='text-lg font-bold'>{username}</h3>
+    <h4 class='text-base'>@{tag}</h4>
 </Popover>
 {:else}
   <Avatar rounded class='h-6 w-6 m-4 cursor-pointer' id='avatar' />
