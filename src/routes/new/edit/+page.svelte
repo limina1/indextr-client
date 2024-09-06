@@ -15,12 +15,12 @@
   };
 
   const hidePreview = () => {
-    isEditing = false;
+    isEditing = true;
   };
 </script>
 
-<main>
-  <form>
+<main class='w-full flex justify-center'>
+  <form class='max-w-2xl w-full'>
     <div class='flex flex-col space-y-4'>
       <div>
         <Label for='article-title' class='mb-2'>Article Title</Label>

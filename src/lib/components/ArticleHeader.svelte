@@ -2,10 +2,10 @@
   import { page } from "$app/stores";
   import { neventEncode } from "$lib/utils";
   import type { NDKEvent } from "@nostr-dev-kit/ndk";
-  import { standardRelays } from "./consts";
+  import { standardRelays } from "../consts";
   import { Card, Button, Modal, Tooltip } from "flowbite-svelte";
   import { ClipboardCheckOutline, ClipboardCleanOutline, CodeOutline, ShareNodesOutline } from "flowbite-svelte-icons";
-  import { ndk } from "./ndk";
+  import { ndk } from "../ndk";
 
   export let event: NDKEvent;
 

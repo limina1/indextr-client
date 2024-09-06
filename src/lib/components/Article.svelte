@@ -6,7 +6,7 @@
   import showdown from 'showdown';
   import { onMount } from 'svelte';
   import { BookOutline } from 'flowbite-svelte-icons';
-  import { zettelKinds } from './consts';
+  import { zettelKinds } from '../consts';
 
   export let index: NDKEvent | null | undefined;
 
