@@ -32,6 +32,7 @@
     "@sveltejs/adapter-auto": "^3.1.1",
     "@sveltejs/kit": "^2.4.3",
     "@types/markdown-it": "^13.0.7",
+    "@types/node": "^22.5.4",
     "@types/showdown": "^2.0.6",
     "autoprefixer": "^10.4.17",
     "eslint-plugin-svelte": "^2.35.1",
