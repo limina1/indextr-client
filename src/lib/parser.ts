@@ -1,7 +1,27 @@
-import { AbstractNode, Asciidoctor, Block, Document, Extensions, Section, type ProcessorOptions } from 'asciidoctor';
+import NDK, { NDKEvent } from '@nostr-dev-kit/ndk';
+import {
+  AbstractBlock,
+  AbstractNode,
+  Asciidoctor,
+  Block,
+  Document,
+  Extensions,
+  Section,
+  type ProcessorOptions
+} from 'asciidoctor';
 
 export default class Pharos extends Asciidoctor {
+  private ndk: NDK;
+
+  /**
+   * The HTML content of the converted document.
+   */
   private html?: string | Document;
+
+  /**
+   * The ID of the root node in the document.
+   */
+  private rootId?: string;
 
   /**
    * A map of node IDs to the nodes themselves.
@@ -18,11 +38,18 @@ export default class Pharos extends Asciidoctor {
    */
   private indices: Map<string, Set<string>> = new Map<string, Set<string>>();
 
-  constructor() {
-    super();
-    const pharos = this;
+  /**
+   * A map of node IDs to the Nostr event IDs of the events they generate.
+   */
+  private eventIds: Map<string, string> = new Map<string, string>();
 
-    pharos.Extensions.register(function () {
+  constructor(ndk: NDK) {
+    super();
+
+    this.ndk = ndk;
+
+    const pharos = this;
+    this.Extensions.register(function () {
       const registry = this;
       registry.treeProcessor(function () {
         const dsl = this;
@@ -36,8 +63,18 @@ export default class Pharos extends Asciidoctor {
 
   parse(content: string, options?: ProcessorOptions | undefined): void {
     this.html = this.convert(content, options) as string | Document | undefined;
-    this.Block
   }
+
+  getEvents(pubkey: string): NDKEvent[] {
+    const stack = this.stackEventNodes(this.rootId!);
+    return this.generateEvents(stack, pubkey);
+  }
+
+  getHtml(): string {
+    return this.html?.toString() || '';
+  }
+
+  // #region Tree Processor Extensions
 
   /**
    * Walks the Asciidoctor Abstract Syntax Tree (AST) and performs the following mappings:
@@ -46,10 +83,10 @@ export default class Pharos extends Asciidoctor {
    * - Each ID of a node containing children is mapped to the set of IDs of its children.
    */
   private treeProcessor(treeProcessor: Extensions.TreeProcessor, document: Document) {
-    const id = document.getId();
-    this.nodes.set(id, document);
-    this.kinds.set(id, 30040);
-    this.indices.set(id, new Set<string>());
+    this.rootId = document.getId();
+    this.nodes.set(this.rootId, document);
+    this.kinds.set(this.rootId, 30040);
+    this.indices.set(this.rootId, new Set<string>());
 
     /** FIFO queue (uses `Array.push()` and `Array.shift()`). */
     const queue: AbstractNode[] = document.getBlocks();
@@ -128,4 +165,127 @@ export default class Pharos extends Asciidoctor {
     // Add the block to its parent index.
     this.indices.get(parentId)?.add(id);
   }
+
+  //#endregion
+
+  // #region NDKEvent Generation
+
+  /**
+   * Generates a stack of node IDs such that processing them in LIFO order will generate any events
+   * used by an index before generating that index itself.
+   * @param rootNodeId The ID of the node from which to start processing.
+   * @returns An array of node IDs in the order they should be processed to generate events.
+   */
+  private stackEventNodes(rootNodeId: string): string[] {
+    const traversalStack: string[] = [this.rootId!];
+    const eventStack: string[] = [];
+
+    while (traversalStack.length > 0) {
+      const parentId = traversalStack.pop()!;
+      eventStack.push(parentId);
+
+      if (!this.indices.has(parentId)) {
+        continue;
+      }
+
+      const childIds = Array.from(this.indices.get(parentId)!);
+      traversalStack.push(...childIds);
+    }
+
+    return eventStack;
+  }
+
+  /**
+   * Generates Nostr events for each node in the given stack.
+   * @param nodeIdStack An array of node IDs ordered such that processing them in LIFO order will
+   * produce any child event before it is required by a parent index event.
+   * @param pubkey The public key (not encoded in npub form) of the user generating the events.
+   * @returns An array of Nostr events.
+   */
+  private generateEvents(nodeIdStack: string[], pubkey: string): NDKEvent[] {
+    const events: NDKEvent[] = [];
+
+    while (nodeIdStack.length > 0) {
+      const nodeId = nodeIdStack.pop();
+      let event: NDKEvent;
+      
+      switch (this.kinds.get(nodeId!)) {
+      case 30040:
+        events.push(this.generateIndexEvent(nodeId!, pubkey));
+        break;
+
+      case 30041:
+      default:
+        // Kind 30041 is currently the default contentful kind.
+        events.push(this.generateZettelEvent(nodeId!, pubkey));
+        break;
+      }
+    }
+
+    return events;
+  }
+
+  /**
+   * Generates a kind 30040 index event for the node with the given ID.
+   * @param nodeId The ID of the AsciiDoc document node from which to generate an index event.  The
+   * node ID will be used as the event's unique d tag identifier.
+   * @param pubkey The public key (not encoded in npub form) of the user generating the events.
+   * @returns An unsigned NDKEvent with the requisite tags, including e tags pointing to each of its
+   * children, and dated to the present moment.
+   */
+  private generateIndexEvent(nodeId: string, pubkey: string): NDKEvent {
+    const title = (this.nodes.get(nodeId)! as AbstractBlock).getTitle();
+    const childTags = Array.from(this.indices.get(nodeId)!)
+      .map(id => ['#e', this.eventIds.get(id)!]);
+
+    const event = new NDKEvent(this.ndk);
+    event.kind = 30040;
+    event.content = '';
+    event.tags = [
+      ['title', title!],
+      ['#d', nodeId],
+      ...childTags
+    ];
+    event.created_at = Date.now();
+    event.pubkey = pubkey;
+
+    // Event ID generation must be the last step.
+    const eventId = event.getEventHash();  
+    this.eventIds.set(nodeId, eventId);
+    event.id = eventId;
+
+    return event;
+  }
+
+  /**
+   * Generates a kind 30041 zettel event for the node with the given ID.
+   * @param nodeId The ID of the AsciiDoc document node from which to generate an index event.  The
+   * node ID will be used as the event's unique d tag identifier.
+   * @param pubkey The public key (not encoded in npub form) of the user generating the events.
+   * @returns An unsigned NDKEvent containing the content of the zettel, the requisite tags, and
+   * dated to the present moment.
+   */
+  private generateZettelEvent(nodeId: string, pubkey: string): NDKEvent {
+    const title = (this.nodes.get(nodeId)! as Block).getTitle();
+    const content = (this.nodes.get(nodeId)! as Block).getSource();  // AsciiDoc source content.
+
+    const event = new NDKEvent(this.ndk);
+    event.kind = 30041;
+    event.content = content!;
+    event.tags = [
+      ['title', title!],
+      ['#d', nodeId]
+    ];
+    event.created_at = Date.now();
+    event.pubkey = pubkey;
+
+    // Event ID generation must be the last step.
+    const eventId = event.getEventHash();  
+    this.eventIds.set(nodeId, eventId);
+    event.id = eventId;
+
+    return event;
+  }
+
+  // #endregion
 }
