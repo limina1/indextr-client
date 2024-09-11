@@ -10,7 +10,35 @@ import {
   type ProcessorOptions
 } from 'asciidoctor';
 
+/**
+ * @classdesc Pharos is an extension of the Asciidoctor class that adds Nostr Knowledge Base (NKB) 
+ * features to core Asciidoctor functionality.  Asciidoctor is used to parse an AsciiDoc document
+ * into an Abstract Syntax Tree (AST), and Phraos generates NKB events from the nodes in that tree.
+ * @class
+ * @augments Asciidoctor
+ */
 export default class Pharos extends Asciidoctor {
+  /**
+   * Key to terminology used in the class:
+   * 
+   * Nostr Knowledge Base (NKB) entities:
+   * - Zettel: Bite-sized pieces of text contained within kind 30041 events.
+   * - Index: A kind 30040 event describing a collection of zettels or other Nostr events.
+   * - Event: The generic term for a Nostr event.
+   * 
+   * Asciidoctor entities:
+   * - Document: The entirety of an AsciiDoc document.  The document title is denoted by a level 0
+   * header, and the document may contain metadata, such as author and edition, immediately below
+   * the title.
+   * - Section: A section of an AsciiDoc document demarcated by a header.  A section may contain
+   * blocks and/or other sections.
+   * - Block: A block of content within an AsciiDoc document.  Blocks are demarcated on either side
+   * by newline characters.  Blocks may contain other blocks or inline content.  Blocks may be
+   * images, paragraphs, sections, a document, or other types of content.
+   * - Node: A unit of the parsed AsciiDoc document.  All blocks are nodes.  Nodes are related
+   * hierarchically to form the Abstract Syntax Tree (AST) representation of the document.
+   */
+
   private ndk: NDK;
 
   /**
@@ -31,12 +59,12 @@ export default class Pharos extends Asciidoctor {
   /**
    * A map of node IDs to the integer event kind that will be used to represent the node.
    */
-  private kinds: Map<string, number> = new Map<string, number>();
+  private eventToKindMap: Map<string, number> = new Map<string, number>();
 
   /**
    * A map of index IDs to the IDs of the nodes they reference.
    */
-  private indices: Map<string, Set<string>> = new Map<string, Set<string>>();
+  private indexToChildrenMap: Map<string, Set<string>> = new Map<string, Set<string>>();
 
   /**
    * A map of node IDs to the Nostr event IDs of the events they generate.
@@ -85,8 +113,8 @@ export default class Pharos extends Asciidoctor {
   private treeProcessor(treeProcessor: Extensions.TreeProcessor, document: Document) {
     this.rootId = document.getId();
     this.nodes.set(this.rootId, document);
-    this.kinds.set(this.rootId, 30040);
-    this.indices.set(this.rootId, new Set<string>());
+    this.eventToKindMap.set(this.rootId, 30040);
+    this.indexToChildrenMap.set(this.rootId, new Set<string>());
 
     /** FIFO queue (uses `Array.push()` and `Array.shift()`). */
     const queue: AbstractNode[] = document.getBlocks();
@@ -111,7 +139,7 @@ export default class Pharos extends Asciidoctor {
    * @param section The section to process.
    * @returns An array of the section's child nodes.  If there are no child nodes, returns an empty
    * array.
-   * @remarks Sections are mapped as kind 30040 indices by default.
+   * @remarks Sections are mapped as kind 30040 indexToChildrenMap by default.
    */
   private processSection(section: Section): AbstractNode[] {
     const id = section.getId();
@@ -122,8 +150,8 @@ export default class Pharos extends Asciidoctor {
     }
 
     this.nodes.set(id, section);
-    this.kinds.set(id, 30040);  // Sections are indices by default.
-    this.indices.set(id, new Set<string>());
+    this.eventToKindMap.set(id, 30040);  // Sections are indexToChildrenMap by default.
+    this.indexToChildrenMap.set(id, new Set<string>());
 
     const parentId = section.getParent()?.getId();
     if (!parentId) {
@@ -131,7 +159,7 @@ export default class Pharos extends Asciidoctor {
     }
 
     // Add the section to its parent index.
-    this.indices.get(parentId)?.add(id);
+    this.indexToChildrenMap.get(parentId)?.add(id);
 
     // Limit to 5 levels of section depth.
     if (section.getLevel() >= 5) {
@@ -155,7 +183,7 @@ export default class Pharos extends Asciidoctor {
     }
 
     this.nodes.set(id, block);
-    this.kinds.set(id, 30041);  // Blocks are zettels by default.
+    this.eventToKindMap.set(id, 30041);  // Blocks are zettels by default.
 
     const parentId = block.getParent()?.getId();
     if (!parentId) {
@@ -163,7 +191,7 @@ export default class Pharos extends Asciidoctor {
     }
 
     // Add the block to its parent index.
-    this.indices.get(parentId)?.add(id);
+    this.indexToChildrenMap.get(parentId)?.add(id);
   }
 
   //#endregion
@@ -184,11 +212,11 @@ export default class Pharos extends Asciidoctor {
       const parentId = traversalStack.pop()!;
       eventStack.push(parentId);
 
-      if (!this.indices.has(parentId)) {
+      if (!this.indexToChildrenMap.has(parentId)) {
         continue;
       }
 
-      const childIds = Array.from(this.indices.get(parentId)!);
+      const childIds = Array.from(this.indexToChildrenMap.get(parentId)!);
       traversalStack.push(...childIds);
     }
 
@@ -209,7 +237,7 @@ export default class Pharos extends Asciidoctor {
       const nodeId = nodeIdStack.pop();
       let event: NDKEvent;
       
-      switch (this.kinds.get(nodeId!)) {
+      switch (this.eventToKindMap.get(nodeId!)) {
       case 30040:
         events.push(this.generateIndexEvent(nodeId!, pubkey));
         break;
@@ -235,7 +263,7 @@ export default class Pharos extends Asciidoctor {
    */
   private generateIndexEvent(nodeId: string, pubkey: string): NDKEvent {
     const title = (this.nodes.get(nodeId)! as AbstractBlock).getTitle();
-    const childTags = Array.from(this.indices.get(nodeId)!)
+    const childTags = Array.from(this.indexToChildrenMap.get(nodeId)!)
       .map(id => ['#e', this.eventIds.get(id)!]);
 
     const event = new NDKEvent(this.ndk);
