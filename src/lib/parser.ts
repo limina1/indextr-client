@@ -10,6 +10,17 @@ import {
   type ProcessorOptions
 } from 'asciidoctor';
 
+interface IndexMetadata {
+  authors?: string[];
+  version?: string;
+  edition?: string;
+  isbn?: string;
+  publicationDate?: string;
+  publisher?: string;
+  summary?: string;
+  coverImage?: string;
+}
+
 /**
  * @classdesc Pharos is an extension of the Asciidoctor class that adds Nostr Knowledge Base (NKB) 
  * features to core Asciidoctor functionality.  Asciidoctor is used to parse an AsciiDoc document
@@ -49,7 +60,14 @@ export default class Pharos extends Asciidoctor {
   /**
    * The ID of the root node in the document.
    */
-  private rootId?: string;
+  private rootNodeId?: string;
+
+  /**
+   * The ID of the root index event generated for the document.
+   */
+  private rootIndexId?: string;
+
+  private rootIndexMetadata: IndexMetadata = {};
 
   /**
    * A map of node IDs to the nodes themselves.
@@ -64,7 +82,7 @@ export default class Pharos extends Asciidoctor {
   /**
    * A map of index IDs to the IDs of the nodes they reference.
    */
-  private indexToChildrenMap: Map<string, Set<string>> = new Map<string, Set<string>>();
+  private indexToChildEventsMap: Map<string, Set<string>> = new Map<string, Set<string>>();
 
   /**
    * A map of node IDs to the Nostr event IDs of the events they generate.
@@ -94,7 +112,7 @@ export default class Pharos extends Asciidoctor {
   }
 
   getEvents(pubkey: string): NDKEvent[] {
-    const stack = this.stackEventNodes(this.rootId!);
+    const stack = this.stackEventNodes();
     return this.generateEvents(stack, pubkey);
   }
 
@@ -111,23 +129,23 @@ export default class Pharos extends Asciidoctor {
    * - Each ID of a node containing children is mapped to the set of IDs of its children.
    */
   private treeProcessor(treeProcessor: Extensions.TreeProcessor, document: Document) {
-    this.rootId = document.getId();
-    this.nodes.set(this.rootId, document);
-    this.eventToKindMap.set(this.rootId, 30040);
-    this.indexToChildrenMap.set(this.rootId, new Set<string>());
+    this.rootNodeId = document.getId();
+    this.nodes.set(this.rootNodeId, document);
+    this.eventToKindMap.set(this.rootNodeId, 30040);
+    this.indexToChildEventsMap.set(this.rootNodeId, new Set<string>());
 
     /** FIFO queue (uses `Array.push()` and `Array.shift()`). */
-    const queue: AbstractNode[] = document.getBlocks();
+    const nodeQueue: AbstractNode[] = document.getBlocks();
 
-    while (queue.length > 0) {
-      const block = queue.shift();
+    while (nodeQueue.length > 0) {
+      const block = nodeQueue.shift();
       if (!block) {
         continue;
       }
 
       if (block instanceof Section) {
         const children = this.processSection(block);
-        queue.push(...children);
+        nodeQueue.push(...children);
       } else {
         this.processBlock(block as Block);
       }
@@ -139,19 +157,19 @@ export default class Pharos extends Asciidoctor {
    * @param section The section to process.
    * @returns An array of the section's child nodes.  If there are no child nodes, returns an empty
    * array.
-   * @remarks Sections are mapped as kind 30040 indexToChildrenMap by default.
+   * @remarks Sections are mapped as kind 30040 indexToChildEventsMap by default.
    */
   private processSection(section: Section): AbstractNode[] {
-    const id = section.getId();
+    const sectionId = section.getId();
 
     // Prevent duplicates.
-    if (this.nodes.has(id)) {
+    if (this.nodes.has(sectionId)) {
       return [];
     }
 
-    this.nodes.set(id, section);
-    this.eventToKindMap.set(id, 30040);  // Sections are indexToChildrenMap by default.
-    this.indexToChildrenMap.set(id, new Set<string>());
+    this.nodes.set(sectionId, section);
+    this.eventToKindMap.set(sectionId, 30040);  // Sections are indexToChildEventsMap by default.
+    this.indexToChildEventsMap.set(sectionId, new Set<string>());
 
     const parentId = section.getParent()?.getId();
     if (!parentId) {
@@ -159,7 +177,7 @@ export default class Pharos extends Asciidoctor {
     }
 
     // Add the section to its parent index.
-    this.indexToChildrenMap.get(parentId)?.add(id);
+    this.indexToChildEventsMap.get(parentId)?.add(sectionId);
 
     // Limit to 5 levels of section depth.
     if (section.getLevel() >= 5) {
@@ -175,15 +193,15 @@ export default class Pharos extends Asciidoctor {
    * @remarks Blocks are mapped as kind 30041 zettels by default.
    */
   private processBlock(block: Block): void {
-    const id = block.getId();
+    const blockId = block.getId();
 
     // Prevent duplicates.
-    if (this.nodes.has(id)) {
+    if (this.nodes.has(blockId)) {
       return;
     }
 
-    this.nodes.set(id, block);
-    this.eventToKindMap.set(id, 30041);  // Blocks are zettels by default.
+    this.nodes.set(blockId, block);
+    this.eventToKindMap.set(blockId, 30041);  // Blocks are zettels by default.
 
     const parentId = block.getParent()?.getId();
     if (!parentId) {
@@ -191,7 +209,7 @@ export default class Pharos extends Asciidoctor {
     }
 
     // Add the block to its parent index.
-    this.indexToChildrenMap.get(parentId)?.add(id);
+    this.indexToChildEventsMap.get(parentId)?.add(blockId);
   }
 
   //#endregion
@@ -201,26 +219,25 @@ export default class Pharos extends Asciidoctor {
   /**
    * Generates a stack of node IDs such that processing them in LIFO order will generate any events
    * used by an index before generating that index itself.
-   * @param rootNodeId The ID of the node from which to start processing.
    * @returns An array of node IDs in the order they should be processed to generate events.
    */
-  private stackEventNodes(rootNodeId: string): string[] {
-    const traversalStack: string[] = [this.rootId!];
-    const eventStack: string[] = [];
+  private stackEventNodes(): string[] {
+    const tempNodeIdStack: string[] = [this.rootNodeId!];
+    const nodeIdStack: string[] = [];
 
-    while (traversalStack.length > 0) {
-      const parentId = traversalStack.pop()!;
-      eventStack.push(parentId);
+    while (tempNodeIdStack.length > 0) {
+      const parentId = tempNodeIdStack.pop()!;
+      nodeIdStack.push(parentId);
 
-      if (!this.indexToChildrenMap.has(parentId)) {
+      if (!this.indexToChildEventsMap.has(parentId)) {
         continue;
       }
 
-      const childIds = Array.from(this.indexToChildrenMap.get(parentId)!);
-      traversalStack.push(...childIds);
+      const childIds = Array.from(this.indexToChildEventsMap.get(parentId)!);
+      tempNodeIdStack.push(...childIds);
     }
 
-    return eventStack;
+    return nodeIdStack;
   }
 
   /**
@@ -235,7 +252,6 @@ export default class Pharos extends Asciidoctor {
 
     while (nodeIdStack.length > 0) {
       const nodeId = nodeIdStack.pop();
-      let event: NDKEvent;
       
       switch (this.eventToKindMap.get(nodeId!)) {
       case 30040:
@@ -244,7 +260,7 @@ export default class Pharos extends Asciidoctor {
 
       case 30041:
       default:
-        // Kind 30041 is currently the default contentful kind.
+        // Kind 30041 (zettel) is currently the default kind for contentful events.
         events.push(this.generateZettelEvent(nodeId!, pubkey));
         break;
       }
@@ -263,7 +279,7 @@ export default class Pharos extends Asciidoctor {
    */
   private generateIndexEvent(nodeId: string, pubkey: string): NDKEvent {
     const title = (this.nodes.get(nodeId)! as AbstractBlock).getTitle();
-    const childTags = Array.from(this.indexToChildrenMap.get(nodeId)!)
+    const childTags = Array.from(this.indexToChildEventsMap.get(nodeId)!)
       .map(id => ['#e', this.eventIds.get(id)!]);
 
     const event = new NDKEvent(this.ndk);
@@ -277,10 +293,49 @@ export default class Pharos extends Asciidoctor {
     event.created_at = Date.now();
     event.pubkey = pubkey;
 
+    // Add optional metadata to the root index event.
+    if (nodeId === this.rootNodeId) {
+      const document = this.nodes.get(nodeId) as Document;
+
+      // Store the metadata so it is available if we need it later.
+      this.rootIndexMetadata = {
+        authors: document
+          .getAuthors()
+          .map(author => author.getName())
+          .filter(name => name != null),
+        version: document.getRevisionNumber(),
+        edition: document.getRevisionRemark(),
+        publicationDate: document.getRevisionDate(),
+      };
+
+      if (this.rootIndexMetadata.authors) {
+        event.tags.push(['author', ...this.rootIndexMetadata.authors!]);
+      }
+
+      if (this.rootIndexMetadata.version || this.rootIndexMetadata.edition) {
+        event.tags.push(
+          [
+            'version',
+            this.rootIndexMetadata.version!,
+            this.rootIndexMetadata.edition!
+          ].filter(value => value != null)
+        );
+      }
+
+      if (this.rootIndexMetadata.publicationDate) {
+        event.tags.push(['published_on', this.rootIndexMetadata.publicationDate!]);
+      }
+    }
+
     // Event ID generation must be the last step.
     const eventId = event.getEventHash();  
     this.eventIds.set(nodeId, eventId);
     event.id = eventId;
+
+    // Store the root index ID in case we need it later.
+    if (nodeId === this.rootNodeId) {
+      this.rootIndexId = eventId;
+    }
 
     return event;
   }
