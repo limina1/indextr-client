@@ -357,7 +357,8 @@ export default class Pharos extends Asciidoctor {
     event.content = content!;
     event.tags = [
       ['title', title!],
-      ['#d', nodeId]
+      ['#d', nodeId],
+      ...this.extractAndNormalizeWikilinks(content!),
     ];
     event.created_at = Date.now();
     event.pubkey = pubkey;
@@ -368,6 +369,37 @@ export default class Pharos extends Asciidoctor {
     event.id = eventId;
 
     return event;
+  }
+
+  // #endregion
+
+  // #region Utility Functions
+
+  /**
+   * Normalizes a string to lower-kebab-case.
+   * @param input The string to normalize.
+   * @returns The normalized string.
+   */
+  private normalizeDTag(input: string): string {
+    return input
+      .toLowerCase()
+      .replace(/\s+/g, '-')  // Replace spaces with hyphens.
+      .replace(/[^a-z0-9\-]/g, '');  // Remove non-alphanumeric characters except hyphens.
+  }
+
+  private extractAndNormalizeWikilinks(content: string): string[][] {
+    const wikilinkPattern = /\[\[([^\]]+)\]\]/g;
+    const wikilinks: string[][] = [];
+    let match: RegExpExecArray | null;
+
+    // TODO: Match custom-named wikilinks as defined in NIP-54.
+    while ((match = wikilinkPattern.exec(content)) !== null) {
+      const linkName = match[1];
+      const normalizedText = this.normalizeDTag(linkName);
+      wikilinks.push(['wikilink', normalizedText]);
+    }
+
+    return wikilinks;
   }
 
   // #endregion
