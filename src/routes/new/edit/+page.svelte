@@ -2,16 +2,17 @@
   import { Input, Label, Textarea, Toolbar, ToolbarButton } from "flowbite-svelte";
   import { CodeOutline, EyeSolid } from "flowbite-svelte-icons";
   import { editorText } from "$lib/stores";
-  import Asciidoctor from 'asciidoctor';
+  import Preview from "$lib/components/Preview.svelte";
+  import Pharos from "$lib/parser";
+  import { ndk } from "$lib/ndk";
 
-  const asciidoctor = Asciidoctor();
+  const parser: Pharos = new Pharos($ndk);
 
   let isEditing: boolean = true;
-  let richEditorContent: string;
 
   const showPreview = () => {
     isEditing = false;
-    richEditorContent = asciidoctor.convert($editorText) as string;
+    parser.parse($editorText);
   };
 
   const hidePreview = () => {
@@ -50,7 +51,7 @@
               <CodeOutline class='w-6 h-6' />
             </ToolbarButton>
           </Toolbar>
-          {@html richEditorContent}
+          <Preview parser={parser} rootIndexId={parser.getRootIndexId()} />
         </div>
       {/if}
     </div>
