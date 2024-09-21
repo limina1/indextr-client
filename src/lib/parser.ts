@@ -67,6 +67,9 @@ export default class Pharos extends Asciidoctor {
    */
   private rootIndexId?: string;
 
+  /**
+   * Metadata to be used to populate the tags on the root index event.
+   */
   private rootIndexMetadata: IndexMetadata = {};
 
   /**
@@ -88,6 +91,8 @@ export default class Pharos extends Asciidoctor {
    * A map of node IDs to the Nostr event IDs of the events they generate.
    */
   private eventIds: Map<string, string> = new Map<string, string>();
+
+  // #region Public API
 
   constructor(ndk: NDK) {
     super();
@@ -116,9 +121,55 @@ export default class Pharos extends Asciidoctor {
     return this.generateEvents(stack, pubkey);
   }
 
+  /**
+   * Gets the entire HTML content of the AsciiDoc document.
+   * @returns The HTML content of the converted document.
+   */
   getHtml(): string {
     return this.html?.toString() || '';
   }
+
+  /**
+   * @returns The ID of the root index of the converted document.
+   * @remarks The root index ID may be used to retrieve metadata or children from the root index.
+   */
+  getRootIndexId(): string {
+    return this.rootIndexId!;
+  }
+
+  /**
+   * @returns The title, if available, from the metadata of the index with the given ID.
+   */
+  getIndexTitle(id: string): string | undefined {
+    const section = this.nodes.get(id) as Section;
+    return section.getTitle();
+  }
+
+  /**
+   * @returns The IDs of any child indices of the index with the given ID.
+   */
+  getChildIndexIds(id: string): string[] {
+    return Array.from(this.indexToChildEventsMap.get(id)!)
+      .filter(id => this.eventToKindMap.get(id) === 30040);
+  }
+
+  /**
+   * @returns The IDs of any child zettels of the index with the given ID.
+   */
+  getChildZettelIds(id: string): string[] {
+    return Array.from(this.indexToChildEventsMap.get(id)!)
+      .filter(id => this.eventToKindMap.get(id) !== 30040);
+  }
+
+  /**
+   * @returns The converted content of the zettel with the given ID.
+   */
+  getZettelHtml(id: string): string {
+    const block = this.nodes.get(id) as Block;
+    return block.convert();
+  }
+
+  // #endregion
 
   // #region Tree Processor Extensions
 
@@ -401,6 +452,8 @@ export default class Pharos extends Asciidoctor {
 
     return wikilinks;
   }
+
+  // TODO: Add search-based wikilink resolution.
 
   // #endregion
 }
