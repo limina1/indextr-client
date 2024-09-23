@@ -1,5 +1,5 @@
 import NDK, { NDKEvent } from '@nostr-dev-kit/ndk';
-import {
+import asciidoctor, {
   AbstractBlock,
   AbstractNode,
   Asciidoctor,
@@ -28,7 +28,7 @@ interface IndexMetadata {
  * @class
  * @augments Asciidoctor
  */
-export default class Pharos extends Asciidoctor {
+export default class Pharos {
   /**
    * Key to terminology used in the class:
    * 
@@ -50,7 +50,11 @@ export default class Pharos extends Asciidoctor {
    * hierarchically to form the Abstract Syntax Tree (AST) representation of the document.
    */
 
+  private asciidoctor: Asciidoctor;
+
   private ndk: NDK;
+
+  private blockCounter: number = 0;
 
   /**
    * The HTML content of the converted document.
@@ -95,12 +99,12 @@ export default class Pharos extends Asciidoctor {
   // #region Public API
 
   constructor(ndk: NDK) {
-    super();
+    this.asciidoctor = asciidoctor();
 
     this.ndk = ndk;
 
     const pharos = this;
-    this.Extensions.register(function () {
+    this.asciidoctor.Extensions.register(function () {
       const registry = this;
       registry.treeProcessor(function () {
         const dsl = this;
@@ -113,7 +117,7 @@ export default class Pharos extends Asciidoctor {
   }
 
   parse(content: string, options?: ProcessorOptions | undefined): void {
-    this.html = this.convert(content, options) as string | Document | undefined;
+    this.html = this.asciidoctor.convert(content, options) as string | Document | undefined;
   }
 
   getEvents(pubkey: string): NDKEvent[] {
@@ -134,7 +138,7 @@ export default class Pharos extends Asciidoctor {
    * @remarks The root index ID may be used to retrieve metadata or children from the root index.
    */
   getRootIndexId(): string {
-    return this.rootIndexId!;
+    return this.rootNodeId!;
   }
 
   /**
@@ -162,9 +166,16 @@ export default class Pharos extends Asciidoctor {
   }
 
   /**
-   * @returns The converted content of the zettel with the given ID.
+   * @returns The IDs of any child nodes in the order in which they should be rendered.
    */
-  getZettelHtml(id: string): string {
+  getOrderedChildIds(id: string): string[] {
+    return Array.from(this.indexToChildEventsMap.get(id)!);
+  }
+
+  /**
+   * @returns The converted content of the node with the given ID.
+   */
+  getHtmlContent(id: string): string {
     const block = this.nodes.get(id) as Block;
     return block.convert();
   }
@@ -181,6 +192,11 @@ export default class Pharos extends Asciidoctor {
    */
   private treeProcessor(treeProcessor: Extensions.TreeProcessor, document: Document) {
     this.rootNodeId = document.getId();
+    if (!this.rootNodeId) {
+      this.rootNodeId = this.normalizeNodeId(document.getTitle() ?? 'root');
+      document.setId(this.rootNodeId);
+    }
+
     this.nodes.set(this.rootNodeId, document);
     this.eventToKindMap.set(this.rootNodeId, 30040);
     this.indexToChildEventsMap.set(this.rootNodeId, new Set<string>());
@@ -194,8 +210,8 @@ export default class Pharos extends Asciidoctor {
         continue;
       }
 
-      if (block instanceof Section) {
-        const children = this.processSection(block);
+      if (block.getContext() === 'section') {
+        const children = this.processSection(block as Section);
         nodeQueue.push(...children);
       } else {
         this.processBlock(block as Block);
@@ -211,7 +227,10 @@ export default class Pharos extends Asciidoctor {
    * @remarks Sections are mapped as kind 30040 indexToChildEventsMap by default.
    */
   private processSection(section: Section): AbstractNode[] {
-    const sectionId = section.getId();
+    let sectionId = section.getId();
+    if (!sectionId) {
+      sectionId = this.normalizeNodeId(section.getTitle() ?? `${section.getContext()}_${this.blockCounter++}`);
+    }
 
     // Prevent duplicates.
     if (this.nodes.has(sectionId)) {
@@ -244,7 +263,12 @@ export default class Pharos extends Asciidoctor {
    * @remarks Blocks are mapped as kind 30041 zettels by default.
    */
   private processBlock(block: Block): void {
-    const blockId = block.getId();
+    // Obtain or generate a unique ID for the block.
+    let blockId = block.getId();
+    if (!blockId) {
+      blockId = `${this.normalizeNodeId(block.getContext())}_${this.blockCounter++}`;
+      block.setId(blockId);
+    }
 
     // Prevent duplicates.
     if (this.nodes.has(blockId)) {
@@ -425,6 +449,13 @@ export default class Pharos extends Asciidoctor {
   // #endregion
 
   // #region Utility Functions
+
+  private normalizeNodeId(input: string): string {
+    return input
+      .toLowerCase()
+      .replace(/\s+/g, '_')  // Replace spaces with underscores.
+      .replace(/[^a-z0-9\_]/g, '');  // Remove non-alphanumeric characters except underscores.
+  }
 
   /**
    * Normalizes a string to lower-kebab-case.

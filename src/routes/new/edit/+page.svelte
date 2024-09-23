@@ -6,13 +6,15 @@
   import Pharos from "$lib/parser";
   import { ndk } from "$lib/ndk";
 
-  const parser: Pharos = new Pharos($ndk);
-
+  let parser: Pharos;
   let isEditing: boolean = true;
 
+  $: rootIndexId = parser?.getRootIndexId();
+
   const showPreview = () => {
-    isEditing = false;
+    parser = new Pharos($ndk);
     parser.parse($editorText);
+    isEditing = false;
   };
 
   const hidePreview = () => {
@@ -51,7 +53,9 @@
               <CodeOutline class='w-6 h-6' />
             </ToolbarButton>
           </Toolbar>
-          <Preview parser={parser} rootIndexId={parser.getRootIndexId()} />
+          {#if rootIndexId}
+            <Preview {parser} {rootIndexId} />
+          {/if}
         </div>
       {/if}
     </div>
