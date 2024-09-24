@@ -9,6 +9,7 @@ import asciidoctor, {
   Section,
   type ProcessorOptions
 } from 'asciidoctor';
+import he from 'he';
 
 interface IndexMetadata {
   authors?: string[];
@@ -146,7 +147,8 @@ export default class Pharos {
    */
   getIndexTitle(id: string): string | undefined {
     const section = this.nodes.get(id) as Section;
-    return section.getTitle();
+    const title = section.getTitle() ?? '';
+    return he.decode(title);
   }
 
   /**
@@ -173,10 +175,20 @@ export default class Pharos {
   }
 
   /**
-   * @returns The converted content of the node with the given ID.
+   * @returns The content of the node with the given ID.  The presentation of the returned content
+   * varies by the node's context.
+   * @remarks By default, the content is returned as HTML produced by the
+   * Asciidoctor converter.  However, other formats are returned for specific contexts:
+   * - Paragraph: The content is returned as a plain string.
    */
-  getHtmlContent(id: string): string {
-    const block = this.nodes.get(id) as Block;
+  getContent(id: string): string {
+    const block = this.nodes.get(id) as AbstractBlock;
+
+    switch (block.getContext()) {
+    case 'paragraph':
+      return block.getContent() ?? '';
+    }
+
     return block.convert();
   }
 

@@ -48,8 +48,16 @@
   }
 
   /* Content */
-  div.note-leather {
-    @apply bg-primary-0 dark:bg-primary-1000 text-gray-800 dark:text-gray-300 hover:bg-primary-100 dark:hover:bg-primary-800 p-2 rounded;
+  div.note-leather,
+  p.note-leather,
+  section.note-leather {
+    @apply bg-primary-0 dark:bg-primary-1000 text-gray-800 dark:text-gray-300 p-2 rounded;
+  }
+
+  div.note-leather:hover:not(:has(.note-leather:hover)),
+  p.note-leather:hover:not(:has(.note-leather:hover)),
+  section.note-leather:hover:not(:has(.note-leather:hover)) {
+    @apply hover:bg-primary-100 dark:hover:bg-primary-800 ;
   }
 
   /* Heading */

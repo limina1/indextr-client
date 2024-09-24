@@ -1,6 +1,6 @@
 <script lang="ts">
   import Pharos from "$lib/parser";
-  import { Heading } from "flowbite-svelte";
+  import { Heading, P } from "flowbite-svelte";
 
   export let parser: Pharos;
   export let rootIndexId: string;
@@ -27,17 +27,21 @@
   };
 </script>
 
-<div>
+<section class='note-leather flex flex-col space-y-2'>
   {#if depth < 4}
     <Heading tag={getHeadingTag(depth)}>{title}</Heading>
-    {#each orderedChildren as id}
+    {#each orderedChildren as id, index}
       {#if childIndices.includes(id)}
         <svelte:self {parser} rootIndexId={id} depth={depth + 1} />
       {:else if (childZettels.includes(id))}
-        {@html parser.getHtmlContent(id)}
+        <P class='note-leather' firstupper={index === 0}>
+          {@html parser.getContent(id)}
+        </P>
       {/if}
     {/each}
   {:else}
-    {@html parser.getHtmlContent(rootIndexId)}
+    <P class='note-leather' firstupper>
+      {@html parser.getContent(rootIndexId)}
+    </P>
   {/if}
-</div>
+</section>
