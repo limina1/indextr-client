@@ -2,6 +2,8 @@
   import Pharos from "$lib/parser";
   import { Heading, P } from "flowbite-svelte";
 
+  export let sectionClass: string = '';
+
   export let parser: Pharos;
   export let rootIndexId: string;
   export let depth: number = 0;
@@ -27,9 +29,9 @@
   };
 </script>
 
-<section class='note-leather flex flex-col space-y-2'>
+<section class={`note-leather flex flex-col space-y-2 ${sectionClass}`}>
   {#if depth < 4}
-    <Heading tag={getHeadingTag(depth)}>{title}</Heading>
+    <Heading tag={getHeadingTag(depth)} class='h-leather'>{title}</Heading>
     {#each orderedChildren as id, index}
       {#if childIndices.includes(id)}
         <svelte:self {parser} rootIndexId={id} depth={depth + 1} />
