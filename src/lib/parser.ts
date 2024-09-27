@@ -1,4 +1,5 @@
 import NDK, { NDKEvent } from '@nostr-dev-kit/ndk';
+import { getNdkInstance } from './ndk';
 import asciidoctor, {
   AbstractBlock,
   AbstractNode,
@@ -10,6 +11,7 @@ import asciidoctor, {
   type ProcessorOptions
 } from 'asciidoctor';
 import he from 'he';
+import { writable, type Writable } from 'svelte/store';
 
 interface IndexMetadata {
   authors?: string[];
@@ -190,6 +192,21 @@ export default class Pharos {
     }
 
     return block.convert();
+  }
+
+  /**
+   * Resets the parser to its initial state, removing any parsed data.
+   */
+  reset(): void {
+    this.blockCounter = 0;
+    this.html = undefined;
+    this.rootNodeId = undefined;
+    this.rootIndexId = undefined;
+    this.rootIndexMetadata = {};
+    this.nodes.clear();
+    this.eventToKindMap.clear();
+    this.indexToChildEventsMap.clear();
+    this.eventIds.clear();
   }
 
   // #endregion
@@ -500,3 +517,5 @@ export default class Pharos {
 
   // #endregion
 }
+
+export const parser: Writable<Pharos> = writable(new Pharos(getNdkInstance()));

@@ -1,17 +1,18 @@
 <script lang="ts">
-  import Pharos from "$lib/parser";
+  import { parser } from "$lib/parser";
   import { Heading, P } from "flowbite-svelte";
 
   export let sectionClass: string = '';
 
-  export let parser: Pharos;
   export let rootIndexId: string;
   export let depth: number = 0;
+  export let allowEditing: boolean = false;
+  // TODO: Add editing functionality.
 
-  const title = parser.getIndexTitle(rootIndexId);
-  const orderedChildren = parser.getOrderedChildIds(rootIndexId);
-  const childIndices = parser.getChildIndexIds(rootIndexId);
-  const childZettels = parser.getChildZettelIds(rootIndexId);
+  const title = $parser.getIndexTitle(rootIndexId);
+  const orderedChildren = $parser.getOrderedChildIds(rootIndexId);
+  const childIndices = $parser.getChildIndexIds(rootIndexId);
+  const childZettels = $parser.getChildZettelIds(rootIndexId);
 
   const getHeadingTag = (depth: number) => {
     switch (depth) {
@@ -34,16 +35,16 @@
     <Heading tag={getHeadingTag(depth)} class='h-leather'>{title}</Heading>
     {#each orderedChildren as id, index}
       {#if childIndices.includes(id)}
-        <svelte:self {parser} rootIndexId={id} depth={depth + 1} />
+        <svelte:self {$parser} rootIndexId={id} depth={depth + 1} />
       {:else if (childZettels.includes(id))}
         <P class='note-leather' firstupper={index === 0}>
-          {@html parser.getContent(id)}
+          {@html $parser.getContent(id)}
         </P>
       {/if}
     {/each}
   {:else}
     <P class='note-leather' firstupper>
-      {@html parser.getContent(rootIndexId)}
+      {@html $parser.getContent(rootIndexId)}
     </P>
   {/if}
 </section>

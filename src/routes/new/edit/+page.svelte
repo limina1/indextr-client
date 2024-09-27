@@ -1,30 +1,40 @@
 <script lang="ts">
   import { Button, Heading, Textarea, Toolbar, ToolbarButton, Tooltip } from "flowbite-svelte";
-  import { CodeOutline, EyeSolid } from "flowbite-svelte-icons";
+  import { CodeOutline, EyeSolid, PaperPlaneOutline } from "flowbite-svelte-icons";
   import { editorText } from "$lib/stores";
   import Preview from "$lib/components/Preview.svelte";
-  import Pharos from "$lib/parser";
+  import Pharos, { parser } from "$lib/parser";
   import { ndk } from "$lib/ndk";
+  import { goto } from "$app/navigation";
 
-  let parser: Pharos;
+  // TODO: Prompt user to sign in before editing.
+
   let isEditing: boolean = true;
 
-  $: rootIndexId = parser?.getRootIndexId();
+  $parser = new Pharos($ndk);
+
+  $: rootIndexId = $parser?.getRootIndexId();
 
   const showPreview = () => {
-    parser = new Pharos($ndk);
-    parser.parse($editorText);
+    $parser.reset();
+    $parser.parse($editorText);
     isEditing = false;
   };
 
   const hidePreview = () => {
     isEditing = true;
   };
+
+  const prepareReview = () => {
+    $parser.reset();
+    $parser.parse($editorText);
+    goto('/new/review');
+  }
 </script>
 
 <div class='w-full flex justify-center'>
   <main class='main-leather flex flex-col space-y-4 max-w-2xl w-full mt-4 mb-4'>
-    <Heading tag='h1' class='h-leather mb-2'>New Article</Heading>
+    <Heading tag='h1' class='h-leather mb-2'>Edit</Heading>
     {#if isEditing}
       <form>
         <Textarea
@@ -38,6 +48,9 @@
             <ToolbarButton name='Preview' on:click={showPreview}>
               <EyeSolid class='w-6 h-6' />
             </ToolbarButton>
+            <ToolbarButton name='Review' slot='end'>
+              <PaperPlaneOutline class='w=6 h-6 rotate-90' on:click={prepareReview} />
+            </ToolbarButton>
           </Toolbar>
         </Textarea>
       </form>
@@ -47,9 +60,12 @@
           <ToolbarButton name='Edit' on:click={hidePreview}>
             <CodeOutline class='w-6 h-6' />
           </ToolbarButton>
+          <ToolbarButton name='Review' slot='end'>
+            <PaperPlaneOutline class='w=6 h-6 rotate-90' on:click={prepareReview} />
+          </ToolbarButton>
         </Toolbar>
         {#if rootIndexId}
-          <Preview sectionClass='m-2' {parser} {rootIndexId} />
+          <Preview sectionClass='m-2' {rootIndexId} />
         {/if}
       </form>
     {/if}
