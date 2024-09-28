@@ -57,7 +57,7 @@ export default class Pharos {
 
   private ndk: NDK;
 
-  private blockCounter: number = 0;
+  private contextCounters: Map<string, number> = new Map<string, number>();
 
   /**
    * The HTML content of the converted document.
@@ -70,11 +70,6 @@ export default class Pharos {
   private rootNodeId?: string;
 
   /**
-   * The ID of the root index event generated for the document.
-   */
-  private rootIndexId?: string;
-
-  /**
    * Metadata to be used to populate the tags on the root index event.
    */
   private rootIndexMetadata: IndexMetadata = {};
@@ -83,6 +78,11 @@ export default class Pharos {
    * A map of node IDs to the nodes themselves.
    */
   private nodes: Map<string, AbstractNode> = new Map<string, AbstractNode>();
+
+  /**
+   * A map of event d tags to the events themselves.
+   */
+  private events: Map<string, NDKEvent> = new Map<string, NDKEvent>();
 
   /**
    * A map of node IDs to the integer event kind that will be used to represent the node.
@@ -123,9 +123,25 @@ export default class Pharos {
     this.html = this.asciidoctor.convert(content, options) as string | Document | undefined;
   }
 
-  getEvents(pubkey: string): NDKEvent[] {
+  /**
+   * Generates and stores Nostr events from the parsed AsciiDoc document.  The events can be
+   * modified via the parser's API and retrieved via the `getEvents()` method.
+   * @param pubkey The public key (as a hex string) of the user that will sign and publish the 
+   * events.
+   */
+  generate(pubkey: string): void {
     const stack = this.stackEventNodes();
-    return this.generateEvents(stack, pubkey);
+    this.generateEvents(stack, pubkey);
+  }
+
+  /**
+   * @param pubkey The public key (as a hex string) of the user generating the events.
+   * @returns An array of Nostr events generated from the parsed AsciiDoc document.
+   * @remarks This method returns the events as they are currently stored in the parser.  If none
+   * are stored, they will be freshly generated.
+   */
+  getEvents(pubkey: string): NDKEvent[] {
+    return Array.from(this.events.values());
   }
 
   /**
@@ -141,7 +157,7 @@ export default class Pharos {
    * @remarks The root index ID may be used to retrieve metadata or children from the root index.
    */
   getRootIndexId(): string {
-    return this.rootNodeId!;
+    return this.normalizeDTag(this.rootNodeId ?? '');
   }
 
   /**
@@ -198,10 +214,9 @@ export default class Pharos {
    * Resets the parser to its initial state, removing any parsed data.
    */
   reset(): void {
-    this.blockCounter = 0;
+    this.contextCounters.clear();
     this.html = undefined;
     this.rootNodeId = undefined;
-    this.rootIndexId = undefined;
     this.rootIndexMetadata = {};
     this.nodes.clear();
     this.eventToKindMap.clear();
@@ -220,12 +235,7 @@ export default class Pharos {
    * - Each ID of a node containing children is mapped to the set of IDs of its children.
    */
   private treeProcessor(treeProcessor: Extensions.TreeProcessor, document: Document) {
-    this.rootNodeId = document.getId();
-    if (!this.rootNodeId) {
-      this.rootNodeId = this.normalizeNodeId(document.getTitle() ?? 'root');
-      document.setId(this.rootNodeId);
-    }
-
+    this.rootNodeId = this.generateNodeId(document);
     this.nodes.set(this.rootNodeId, document);
     this.eventToKindMap.set(this.rootNodeId, 30040);
     this.indexToChildEventsMap.set(this.rootNodeId, new Set<string>());
@@ -258,7 +268,7 @@ export default class Pharos {
   private processSection(section: Section): AbstractNode[] {
     let sectionId = section.getId();
     if (!sectionId) {
-      sectionId = this.normalizeNodeId(section.getTitle() ?? `${section.getContext()}_${this.blockCounter++}`);
+      sectionId = this.generateNodeId(section);
     }
 
     // Prevent duplicates.
@@ -295,7 +305,7 @@ export default class Pharos {
     // Obtain or generate a unique ID for the block.
     let blockId = block.getId();
     if (!blockId) {
-      blockId = `${this.normalizeNodeId(block.getContext())}_${this.blockCounter++}`;
+      blockId = this.generateNodeId(block) ;
       block.setId(blockId);
     }
 
@@ -348,7 +358,7 @@ export default class Pharos {
    * Generates Nostr events for each node in the given stack.
    * @param nodeIdStack An array of node IDs ordered such that processing them in LIFO order will
    * produce any child event before it is required by a parent index event.
-   * @param pubkey The public key (not encoded in npub form) of the user generating the events.
+   * @param pubkey The public key (as a hex string) of the user generating the events.
    * @returns An array of Nostr events.
    */
   private generateEvents(nodeIdStack: string[], pubkey: string): NDKEvent[] {
@@ -436,10 +446,7 @@ export default class Pharos {
     this.eventIds.set(nodeId, eventId);
     event.id = eventId;
 
-    // Store the root index ID in case we need it later.
-    if (nodeId === this.rootNodeId) {
-      this.rootIndexId = eventId;
-    }
+    this.events.set(nodeId, event);
 
     return event;
   }
@@ -472,12 +479,206 @@ export default class Pharos {
     this.eventIds.set(nodeId, eventId);
     event.id = eventId;
 
+    this.events.set(nodeId, event);
+
     return event;
   }
 
   // #endregion
 
   // #region Utility Functions
+
+  private generateNodeId(block: AbstractBlock): string {
+    let blockId: string = block.getId();
+
+    if (blockId != null && blockId.length > 0) {
+      return blockId;
+    }
+
+    blockId = this.normalizeNodeId(block.getTitle() ?? '');
+
+    // Use the provided title, if possible.
+    if (blockId != null && blockId.length > 0) {
+      return this.normalizeNodeId(blockId);
+    }
+
+    const documentId = this.rootNodeId;
+    let blockNumber: number;
+
+    const context = block.getContext();
+    switch (context) {
+    case 'admonition':
+      blockNumber = this.contextCounters.get('admonition') ?? 0;
+      blockId = `${documentId}_admonition_${blockNumber++}`;
+      this.contextCounters.set('admonition', blockNumber);
+      break;
+
+    case 'audio':
+      blockNumber = this.contextCounters.get('audio') ?? 0;
+      blockId = `${documentId}_audio_${blockNumber++}`;
+      this.contextCounters.set('audio', blockNumber);
+      break;
+
+    case 'colist':
+      blockNumber = this.contextCounters.get('colist') ?? 0;
+      blockId = `${documentId}_colist_${blockNumber++}`;
+      this.contextCounters.set('colist', blockNumber);
+      break;
+
+    case 'dlist':
+      blockNumber = this.contextCounters.get('dlist') ?? 0;
+      blockId = `${documentId}_dlist_${blockNumber++}`;
+      this.contextCounters.set('dlist', blockNumber);
+      break;
+
+    case 'document':
+      blockNumber = this.contextCounters.get('document') ?? 0;
+      blockId = `${documentId}_document_${blockNumber++}`;
+      this.contextCounters.set('document', blockNumber);
+      break;
+
+    case 'example':
+      blockNumber = this.contextCounters.get('example') ?? 0;
+      blockId = `${documentId}_example_${blockNumber++}`;
+      this.contextCounters.set('example', blockNumber);
+      break;
+
+    case 'floating_title':
+      blockNumber = this.contextCounters.get('floating_title') ?? 0;
+      blockId = `${documentId}_floating_title_${blockNumber++}`;
+      this.contextCounters.set('floating_title', blockNumber);
+      break;
+
+    case 'image':
+      blockNumber = this.contextCounters.get('image') ?? 0;
+      blockId = `${documentId}_image_${blockNumber++}`;
+      this.contextCounters.set('image', blockNumber);
+      break;
+
+    case 'list_item':
+      blockNumber = this.contextCounters.get('list_item') ?? 0;
+      blockId = `${documentId}_list_item_${blockNumber++}`;
+      this.contextCounters.set('list_item', blockNumber);
+      break;
+
+    case 'listing':
+      blockNumber = this.contextCounters.get('listing') ?? 0;
+      blockId = `${documentId}_listing_${blockNumber++}`;
+      this.contextCounters.set('listing', blockNumber);
+      break;
+
+    case 'literal':
+      blockNumber = this.contextCounters.get('literal') ?? 0;
+      blockId = `${documentId}_literal_${blockNumber++}`;
+      this.contextCounters.set('literal', blockNumber);
+      break;
+
+    case 'olist':
+      blockNumber = this.contextCounters.get('olist') ?? 0;
+      blockId = `${documentId}_olist_${blockNumber++}`;
+      this.contextCounters.set('olist', blockNumber);
+      break;
+
+    case 'open':
+      blockNumber = this.contextCounters.get('open') ?? 0;
+      blockId = `${documentId}_open_${blockNumber++}`;
+      this.contextCounters.set('open', blockNumber);
+      break;
+
+    case 'page_break':
+      blockNumber = this.contextCounters.get('page_break') ?? 0;
+      blockId = `${documentId}_page_break_${blockNumber++}`;
+      this.contextCounters.set('page_break', blockNumber);
+      break;
+
+    case 'paragraph':
+      blockNumber = this.contextCounters.get('paragraph') ?? 0;
+      blockId = `${documentId}_paragraph_${blockNumber++}`;
+      this.contextCounters.set('paragraph', blockNumber);
+      break;
+
+    case 'pass':
+      blockNumber = this.contextCounters.get('pass') ?? 0;
+      blockId = `${documentId}_pass_${blockNumber++}`;
+      this.contextCounters.set('pass', blockNumber);
+      break;
+
+    case 'preamble':
+      blockNumber = this.contextCounters.get('preamble') ?? 0;
+      blockId = `${documentId}_preamble_${blockNumber++}`;
+      this.contextCounters.set('preamble', blockNumber);
+      break;
+
+    case 'quote':
+      blockNumber = this.contextCounters.get('quote') ?? 0;
+      blockId = `${documentId}_quote_${blockNumber++}`;
+      this.contextCounters.set('quote', blockNumber);
+      break;
+
+    case 'section':
+      blockNumber = this.contextCounters.get('section') ?? 0;
+      blockId = `${documentId}_section_${blockNumber++}`;
+      this.contextCounters.set('section', blockNumber);
+      break;
+
+    case 'sidebar':
+      blockNumber = this.contextCounters.get('sidebar') ?? 0;
+      blockId = `${documentId}_sidebar_${blockNumber++}`;
+      this.contextCounters.set('sidebar', blockNumber);
+      break;
+
+    case 'table':
+      blockNumber = this.contextCounters.get('table') ?? 0;
+      blockId = `${documentId}_table_${blockNumber++}`;
+      this.contextCounters.set('table', blockNumber);
+      break;
+
+    case 'table_cell':
+      blockNumber = this.contextCounters.get('table_cell') ?? 0;
+      blockId = `${documentId}_table_cell_${blockNumber++}`;
+      this.contextCounters.set('table_cell', blockNumber);
+      break;
+
+    case 'thematic_break':
+      blockNumber = this.contextCounters.get('thematic_break') ?? 0;
+      blockId = `${documentId}_thematic_break_${blockNumber++}`;
+      this.contextCounters.set('thematic_break', blockNumber);
+      break;
+
+    case 'toc':
+      blockNumber = this.contextCounters.get('toc') ?? 0;
+      blockId = `${documentId}_toc_${blockNumber++}`;
+      this.contextCounters.set('toc', blockNumber);
+      break;
+
+    case 'ulist':
+      blockNumber = this.contextCounters.get('ulist') ?? 0;
+      blockId = `${documentId}_ulist_${blockNumber++}`;
+      this.contextCounters.set('ulist', blockNumber);
+      break;
+
+    case 'verse':
+      blockNumber = this.contextCounters.get('verse') ?? 0;
+      blockId = `${documentId}_verse_${blockNumber++}`;
+      this.contextCounters.set('verse', blockNumber);
+      break;
+
+    case 'video':
+      blockNumber = this.contextCounters.get('video') ?? 0;
+      blockId = `${documentId}_video_${blockNumber++}`;
+      this.contextCounters.set('video', blockNumber);
+      break;
+
+    default:
+      blockNumber = this.contextCounters.get('block') ?? 0;
+      blockId = `${documentId}_block_${blockNumber++}`;
+      this.contextCounters.set('block', blockNumber);
+      break;
+    }
+
+    block.setId(blockId);
+    return blockId;
+  }
 
   private normalizeNodeId(input: string): string {
     return input
@@ -494,7 +695,7 @@ export default class Pharos {
   private normalizeDTag(input: string): string {
     return input
       .toLowerCase()
-      .replace(/\s+/g, '-')  // Replace spaces with hyphens.
+      .replace(/[\s_]+/g, '-')  // Replace spaces with hyphens.
       .replace(/[^a-z0-9\-]/g, '');  // Remove non-alphanumeric characters except hyphens.
   }
 
