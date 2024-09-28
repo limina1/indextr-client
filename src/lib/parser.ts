@@ -99,6 +99,11 @@ export default class Pharos {
    */
   private eventIds: Map<string, string> = new Map<string, string>();
 
+  /**
+   * When `true`, `getEvents()` should regenerate the event tree to propagate updates.
+   */
+  private shouldUpdateEventTree: boolean = false;
+
   // #region Public API
 
   constructor(ndk: NDK) {
@@ -141,6 +146,11 @@ export default class Pharos {
    * are stored, they will be freshly generated.
    */
   getEvents(pubkey: string): NDKEvent[] {
+    if (this.shouldUpdateEventTree) {
+      const stack = this.stackEventNodes();
+      return this.generateEvents(stack, pubkey);
+    }
+
     return Array.from(this.events.values());
   }
 
@@ -208,6 +218,69 @@ export default class Pharos {
     }
 
     return block.convert();
+  }
+
+  /**
+   * Updates the `content` field of a Nostr event in-place.
+   * @param dTag The d tag of the event to update.
+   * @param content The new content to assign to the event.
+   * @returns The updated event.
+   * @remarks Changing the content of a Nostr event changes its hash, but regenerating the event
+   * tree is expensive.  Thus, the event tree will not be regenerated until the consumer next
+   * invokes `getEvents()`.
+   */
+  updateEventContent(dTag: string, content: string): NDKEvent {
+    const event = this.events.get(dTag);
+    if (!event) {
+      throw new Error(`No event found for #d:${dTag}.`);
+    }
+
+    event.content = content;
+    event.id = event.getEventHash();
+
+    this.events.set(dTag, event);
+    this.eventIds.set(dTag, event.id);
+    this.shouldUpdateEventTree = true;
+
+    return event;
+  }
+
+  /**
+   * Moves an event within the event tree.
+   * @param dTag The d tag of the event to be moved.
+   * @param oldParentDTag The d tag of the moved event's current parent.
+   * @param newParentDTag The d tag of the moved event's new parent.
+   * @throws Throws an error if the parameters specify an invalid move.
+   * @remarks Both the old and new parent events must be kind 30040 index events.  Moving the event
+   * within the tree changes the hash of several events, so the event tree will be regenerated when
+   * the consumer next invokes `getEvents()`.
+   */
+  moveEvent(dTag: string, oldParentDTag: string, newParentDTag: string): void {
+    const event = this.events.get(dTag);
+    if (!event) {
+      throw new Error(`No event found for #d:${dTag}.`);
+    }
+
+    if (this.eventToKindMap.get(oldParentDTag) !== 30040) {
+      throw new Error(`Old parent event #d:${oldParentDTag} is not an index event.`);
+    }
+
+    if (this.eventToKindMap.get(newParentDTag) !== 30040) {
+      throw new Error(`New parent event #d:${newParentDTag} is not an index event.`);
+    }
+
+    const oldParentMap = this.indexToChildEventsMap.get(oldParentDTag);
+    const newParentMap = this.indexToChildEventsMap.get(newParentDTag);
+
+    if (!oldParentMap?.has(dTag)) {
+      throw new Error(`Event #d:${dTag} is not a child of parent #d:${oldParentDTag}.`);
+    }
+
+    // Perform the move.
+    oldParentMap?.delete(dTag);
+    newParentMap?.add(dTag);
+
+    this.shouldUpdateEventTree = true;
   }
 
   /**
@@ -380,6 +453,7 @@ export default class Pharos {
       }
     }
 
+    this.shouldUpdateEventTree = false;
     return events;
   }
 
