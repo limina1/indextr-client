@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Button, Heading, Textarea, Toolbar, ToolbarButton, Tooltip } from "flowbite-svelte";
+  import { Heading, Textarea, Toolbar, ToolbarButton, Tooltip } from "flowbite-svelte";
   import { CodeOutline, EyeSolid, PaperPlaneOutline } from "flowbite-svelte-icons";
   import { editorText } from "$lib/stores";
   import Preview from "$lib/components/Preview.svelte";
@@ -10,14 +10,13 @@
   // TODO: Prompt user to sign in before editing.
 
   let isEditing: boolean = true;
-
-  $parser = new Pharos($ndk);
-
-  $: rootIndexId = $parser?.getRootIndexId();
+  let rootIndexId: string;
 
   const showPreview = () => {
+    $parser ??= new Pharos($ndk);
     $parser.reset();
     $parser.parse($editorText);
+    rootIndexId = $parser.getRootIndexId();
     isEditing = false;
   };
 
@@ -28,7 +27,7 @@
   const prepareReview = () => {
     $parser.reset();
     $parser.parse($editorText);
-    goto('/new/review');
+    goto('/new/compose');
   }
 </script>
 
@@ -48,8 +47,8 @@
             <ToolbarButton name='Preview' on:click={showPreview}>
               <EyeSolid class='w-6 h-6' />
             </ToolbarButton>
-            <ToolbarButton name='Review' slot='end'>
-              <PaperPlaneOutline class='w=6 h-6 rotate-90' on:click={prepareReview} />
+            <ToolbarButton name='Review' slot='end' on:click={prepareReview}>
+              <PaperPlaneOutline class='w=6 h-6 rotate-90' />
             </ToolbarButton>
           </Toolbar>
         </Textarea>
@@ -60,8 +59,8 @@
           <ToolbarButton name='Edit' on:click={hidePreview}>
             <CodeOutline class='w-6 h-6' />
           </ToolbarButton>
-          <ToolbarButton name='Review' slot='end'>
-            <PaperPlaneOutline class='w=6 h-6 rotate-90' on:click={prepareReview} />
+          <ToolbarButton name='Review' slot='end' on:click={prepareReview}>
+            <PaperPlaneOutline class='w=6 h-6 rotate-90' />
           </ToolbarButton>
         </Toolbar>
         {#if rootIndexId}

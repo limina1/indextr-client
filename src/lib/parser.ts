@@ -167,7 +167,7 @@ export default class Pharos {
    * @remarks The root index ID may be used to retrieve metadata or children from the root index.
    */
   getRootIndexId(): string {
-    return this.normalizeDTag(this.rootNodeId ?? '');
+    return this.normalizeId(this.rootNodeId) ?? '';
   }
 
   /**
@@ -309,6 +309,7 @@ export default class Pharos {
    */
   private treeProcessor(treeProcessor: Extensions.TreeProcessor, document: Document) {
     this.rootNodeId = this.generateNodeId(document);
+    document.setId(this.rootNodeId);
     this.nodes.set(this.rootNodeId, document);
     this.eventToKindMap.set(this.rootNodeId, 30040);
     this.indexToChildEventsMap.set(this.rootNodeId, new Set<string>());
@@ -339,7 +340,7 @@ export default class Pharos {
    * @remarks Sections are mapped as kind 30040 indexToChildEventsMap by default.
    */
   private processSection(section: Section): AbstractNode[] {
-    let sectionId = section.getId();
+    let sectionId = this.normalizeId(section.getId());
     if (!sectionId) {
       sectionId = this.generateNodeId(section);
     }
@@ -353,7 +354,7 @@ export default class Pharos {
     this.eventToKindMap.set(sectionId, 30040);  // Sections are indexToChildEventsMap by default.
     this.indexToChildEventsMap.set(sectionId, new Set<string>());
 
-    const parentId = section.getParent()?.getId();
+    const parentId = this.normalizeId(section.getParent()?.getId());
     if (!parentId) {
       return [];
     }
@@ -376,7 +377,7 @@ export default class Pharos {
    */
   private processBlock(block: Block): void {
     // Obtain or generate a unique ID for the block.
-    let blockId = block.getId();
+    let blockId = this.normalizeId(block.getId());
     if (!blockId) {
       blockId = this.generateNodeId(block) ;
       block.setId(blockId);
@@ -390,7 +391,7 @@ export default class Pharos {
     this.nodes.set(blockId, block);
     this.eventToKindMap.set(blockId, 30041);  // Blocks are zettels by default.
 
-    const parentId = block.getParent()?.getId();
+    const parentId = this.normalizeId(block.getParent()?.getId());
     if (!parentId) {
       return;
     }
@@ -563,17 +564,17 @@ export default class Pharos {
   // #region Utility Functions
 
   private generateNodeId(block: AbstractBlock): string {
-    let blockId: string = block.getId();
+    let blockId: string | null = this.normalizeId(block.getId());
 
     if (blockId != null && blockId.length > 0) {
       return blockId;
     }
 
-    blockId = this.normalizeNodeId(block.getTitle() ?? '');
+    blockId = this.normalizeId(block.getTitle());
 
     // Use the provided title, if possible.
     if (blockId != null && blockId.length > 0) {
-      return this.normalizeNodeId(blockId);
+      return blockId;
     }
 
     const documentId = this.rootNodeId;
@@ -754,23 +755,17 @@ export default class Pharos {
     return blockId;
   }
 
-  private normalizeNodeId(input: string): string {
-    return input
-      .toLowerCase()
-      .replace(/\s+/g, '_')  // Replace spaces with underscores.
-      .replace(/[^a-z0-9\_]/g, '');  // Remove non-alphanumeric characters except underscores.
-  }
+  private normalizeId(input?: string): string | null {
+    if (input == null || input.length === 0) {
+      return null;
+    }
 
-  /**
-   * Normalizes a string to lower-kebab-case.
-   * @param input The string to normalize.
-   * @returns The normalized string.
-   */
-  private normalizeDTag(input: string): string {
-    return input
+    return he.decode(input)
       .toLowerCase()
-      .replace(/[\s_]+/g, '-')  // Replace spaces with hyphens.
-      .replace(/[^a-z0-9\-]/g, '');  // Remove non-alphanumeric characters except hyphens.
+      .replace(/[_]/g, ' ')  // Replace underscores with spaces.
+      .trim()
+      .replace(/\s+/g, '-')  // Replace spaces with dashes.
+      .replace(/[^a-z0-9\-]/g, '');  // Remove non-alphanumeric characters except dashes.
   }
 
   private extractAndNormalizeWikilinks(content: string): string[][] {
@@ -781,8 +776,8 @@ export default class Pharos {
     // TODO: Match custom-named wikilinks as defined in NIP-54.
     while ((match = wikilinkPattern.exec(content)) !== null) {
       const linkName = match[1];
-      const normalizedText = this.normalizeDTag(linkName);
-      wikilinks.push(['wikilink', normalizedText]);
+      const normalizedText = this.normalizeId(linkName);
+      wikilinks.push(['wikilink', normalizedText!]);
     }
 
     return wikilinks;

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { parser } from "$lib/parser";
-  import { Heading, P } from "flowbite-svelte";
+  import { Button, Heading, P, Tooltip } from "flowbite-svelte";
+  import { CaretDownSolid, CaretUpSolid, EditOutline } from "flowbite-svelte-icons";
 
   export let sectionClass: string = '';
 
@@ -8,6 +9,7 @@
   export let depth: number = 0;
   export let allowEditing: boolean = false;
   // TODO: Add editing functionality.
+  const isEditing: boolean = false;
 
   const title = $parser.getIndexTitle(rootIndexId);
   const orderedChildren = $parser.getOrderedChildIds(rootIndexId);
@@ -35,11 +37,29 @@
     <Heading tag={getHeadingTag(depth)} class='h-leather'>{title}</Heading>
     {#each orderedChildren as id, index}
       {#if childIndices.includes(id)}
-        <svelte:self {$parser} rootIndexId={id} depth={depth + 1} />
+        <svelte:self rootIndexId={id} depth={depth + 1} {allowEditing} />
       {:else if (childZettels.includes(id))}
-        <P class='note-leather' firstupper={index === 0}>
-          {@html $parser.getContent(id)}
-        </P>
+        <div class='grid grid-cols-[1fr_auto] gap-2'>
+          <P class='note-leather' firstupper={index === 0}>
+            {@html $parser.getContent(id)}
+          </P>
+          {#if allowEditing}
+            <div class='flex flex-col space-y-2 justify-start'>
+              <Button class='btn-leather' size='sm' outline>
+                <CaretUpSolid />
+              </Button>
+              <Button class='btn-leather' size='sm' outline>
+                <CaretDownSolid />
+              </Button>
+              <Button class='btn-leather' size='sm' outline>
+                <EditOutline />
+              </Button>
+              <Tooltip class='tooltip-leather' type='auto' placement='top'>
+                Edit
+              </Tooltip>
+            </div>
+          {/if}
+        </div>
       {/if}
     {/each}
   {:else}
