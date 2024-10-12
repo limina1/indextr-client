@@ -183,7 +183,7 @@ export default class Pharos {
    * @returns The IDs of any child indices of the index with the given ID.
    */
   getChildIndexIds(id: string): string[] {
-    return Array.from(this.indexToChildEventsMap.get(id)!)
+    return Array.from(this.indexToChildEventsMap.get(id) ?? [])
       .filter(id => this.eventToKindMap.get(id) === 30040);
   }
 
@@ -191,7 +191,7 @@ export default class Pharos {
    * @returns The IDs of any child zettels of the index with the given ID.
    */
   getChildZettelIds(id: string): string[] {
-    return Array.from(this.indexToChildEventsMap.get(id)!)
+    return Array.from(this.indexToChildEventsMap.get(id) ?? [])
       .filter(id => this.eventToKindMap.get(id) !== 30040);
   }
 
@@ -199,7 +199,7 @@ export default class Pharos {
    * @returns The IDs of any child nodes in the order in which they should be rendered.
    */
   getOrderedChildIds(id: string): string[] {
-    return Array.from(this.indexToChildEventsMap.get(id)!);
+    return Array.from(this.indexToChildEventsMap.get(id) ?? []);
   }
 
   /**
