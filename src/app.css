@@ -48,8 +48,21 @@
   }
 
   /* Content */
-  div.note-leather {
-    @apply bg-primary-0 dark:bg-primary-1000 text-gray-800 dark:text-gray-300 hover:bg-primary-100 dark:hover:bg-primary-800 p-2 rounded;
+  main.main-leather,
+  article.article-leather {
+    @apply bg-primary-0 dark:bg-primary-1000 text-gray-800 dark:text-gray-300;
+  }
+
+  div.note-leather,
+  p.note-leather,
+  section.note-leather {
+    @apply bg-primary-0 dark:bg-primary-1000 text-gray-800 dark:text-gray-300 p-2 rounded;
+  }
+
+  div.note-leather:hover:not(:has(.note-leather:hover)),
+  p.note-leather:hover:not(:has(.note-leather:hover)),
+  section.note-leather:hover:not(:has(.note-leather:hover)) {
+    @apply hover:bg-primary-100 dark:hover:bg-primary-800 ;
   }
 
   /* Heading */
@@ -104,6 +117,25 @@
 
   a.sidebar-item-leather {
     @apply hover:bg-primary-100 dark:hover:bg-primary-800;
+  }
+
+  /* Textarea */
+  div.textarea-leather {
+    @apply bg-gray-200 dark:bg-gray-800 border-gray-400 dark:border-gray-600;
+  }
+
+  div.textarea-leather > div:nth-child(1),
+  div.toolbar-leather {
+    @apply border-none;
+  }
+
+  div.textarea-leather > div:nth-child(2) {
+    @apply bg-gray-100 dark:bg-gray-900;
+  }
+
+  div.textarea-leather,
+  div.textarea-leather textarea {
+    @apply text-gray-800 dark:text-gray-300;
   }
 
   /* Tooltip */

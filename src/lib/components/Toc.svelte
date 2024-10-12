@@ -2,7 +2,10 @@
 	import type { NDKEvent } from '@nostr-dev-kit/ndk';
  	import {nip19} from 'nostr-tools';
 	export let notes: NDKEvent[] = [];
-    console.debug(notes);
+    // check if notes is empty
+    if (notes.length === 0) {
+        console.debug('notes is empty');
+    }
 </script>
 
 <div class="toc">

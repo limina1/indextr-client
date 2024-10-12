@@ -1,5 +1,5 @@
 <script lang="ts">
-  import ArticleHeader from "$lib/ArticleHeader.svelte";
+  import ArticleHeader from "$lib/components/ArticleHeader.svelte";
   import { FeedType, indexKind, standardRelays } from "$lib/consts";
   import { ndk } from "$lib/ndk";
   import { filterValidIndexEvents } from "$lib/utils";

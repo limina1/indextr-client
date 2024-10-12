@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Article from '$lib/Article.svelte';
+	import Article from '$lib/components/Article.svelte';
   import { ndk } from '$lib/ndk';
   import { TextPlaceholder } from 'flowbite-svelte';
   import type { PageData } from './$types';
