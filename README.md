@@ -2,7 +2,8 @@
 
 # Alexandria
 
-Alexandria is a Nostr Knowledge Base (NKB) and a reader for long-form articles. 
+Alexandria is a Nostr Knowledge Base (NKB) and a reader for long-form articles.
+For a thorough introduction, please refer to our [project documention](https://wikistr.com/gc-alexandria*dd664d5e4016433a8cd69f005ae1480804351789b59de5af06276de65633d319).
  
 ## Features 
  
@@ -33,7 +34,7 @@ For an interim solution, please use the [command line program.](https://gitworks
 
 Make sure that you have [Node.js](https://nodejs.org/en/download/package-manager) installed.
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`) -- make sure to use an independent shell for this step, and not a terminal embedded in an IDE --, start a development server:
 
 ```bash
 npm run dev
