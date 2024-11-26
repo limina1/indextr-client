@@ -16,8 +16,8 @@ As Alexandria is targeted toward those who are trying to focus on longer, more-c
 ![event display](https://i.nostr.build/KG2D2.png) 
  
 ![cards](https://i.nostr.build/Vwkl0.png) 
-![light network](https://i.nostr.build/OYnskrwCwrN0lz41.png) 
-![dark network](https://i.nostr.build/oSwIJHCvCfHjbk21.png) 
+![light-network](https://i.nostr.build/OYnskrwCwrN0lz41.png) 
+![dark-network](https://i.nostr.build/oSwIJHCvCfHjbk21.png) 
  
 ### Modular articles 
  
