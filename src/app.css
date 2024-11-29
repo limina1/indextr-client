@@ -44,7 +44,7 @@
   div.card-leather h4,
   div.card-leather h5,
   div.card-leather h6 {
-    @apply text-gray-800 hover:text-primary-400 dark:text-gray-300 dark:hover:text-primary-100;
+    @apply text-gray-800 hover:text-primary-400 dark:text-gray-300 dark:hover:text-primary-500;
   }
 
   /* Content */
