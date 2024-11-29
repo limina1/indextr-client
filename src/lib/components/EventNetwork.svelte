@@ -19,6 +19,14 @@
     if (svg) drawNetwork();
   }
 
+  function getEventColor(eventId: string): string {
+    const num = parseInt(eventId.slice(0, 4), 16);
+    const hue = num % 360;
+    const saturation = 70;
+    const lightness = 75;
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  }
+
   function generateGraph(events: NDKEvent[]) {
     const nodes = [];
     const links = [];
@@ -184,17 +192,9 @@
         if (!d.isContainer) {
           return isDarkMode ? "#342718" : "#d6c1a8"; // primary-800 : primary-100
         }
-        const hash = d.id.split("").reduce((acc, char) => {
-          return char.charCodeAt(0) + ((acc << 5) - acc);
-        }, 0);
-        const hue = Math.abs(hash % 360);
-        return `hsl(${hue}, 70%, 75%)`; // Consistent pastel colors for index nodes
+        return getEventColor(d.id);
       })
       .attr("stroke", "#000000") // Black outline for all nodes
-      .attr("stroke-width", 2)
-      // .attr("stroke", (d) =>
-      //   d.isContainer ? (isDarkMode ? "#9CA3AF" : "#4B5563") : "none",
-      // )
       .attr("stroke-width", 2);
 
     // Add text labels
@@ -350,7 +350,7 @@
           />
           <span
             class="absolute inset-0 flex items-center justify-center text-black"
-            style="font-size: 12px; font-weight: bold;">I</span
+            style="font-size: 12px;">I</span
           >
         </div>
         <span>Index events (kind 30040) - Each with a unique pastel color</span>
@@ -359,10 +359,11 @@
         <div class="relative w-6 h-6 mr-2">
           <span
             class="absolute inset-0 rounded-full border-2 border-black bg-gray-700 dark:bg-gray-300"
+            style="background-color: #d6c1a8"
           />
           <span
             class="absolute inset-0 flex items-center justify-center text-black"
-            style="font-size: 12px; font-weight: bold;">C</span
+            style="font-size: 12px;  ">C</span
           >
         </div>
         <span>Content events (kind 30041) - Publication sections</span>
